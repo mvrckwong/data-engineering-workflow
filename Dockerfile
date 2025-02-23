@@ -43,5 +43,6 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/pyth
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Copy application files
-COPY dagster.yaml workspace.yaml ./
+COPY ./configs/dagster.yaml ./configs/workspace.yaml ./
+# COPY ./dagster.yaml ./workspace.yaml ./
 COPY etl ./etl

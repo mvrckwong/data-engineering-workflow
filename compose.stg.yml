@@ -35,6 +35,7 @@ services:
     ports:
       - 5432:5432
     environment:
+      - POSTGRES_USER=${POSTGRES_DG_USER}
       - POSTGRES_PASSWORD=${PGPASS}
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
