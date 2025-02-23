@@ -10,17 +10,25 @@ x-dagster-common: &dagster-common
 
 services:
 
-  dagster-dagit:
+  webserver:
     <<: *dagster-common
+    restart: on-failure
+    tty: true
+    command: ["dagster-webserver", "-w", "workspace.yaml", "-h", "0.0.0.0"]
     ports:
-      - 3000:3000
+      - ${PORT_DG_WEBSERVER:-3030}:3000
+    depends_on:
+      - dagster-postgres
 
-  dagster-daemon:
+  daemon:
     <<: *dagster-common
-    command: "dagster-daemon run"
-    environment:
-      - PGPASS=${PGPASS}
-      - PGUID=${PGUID}
+    restart: always
+    command: ["dagster-daemon", "run"]
+    # environment:
+    #   - PGPASS=${PGPASS}
+    #   - PGUID=${PGUID}
+    depends_on:
+      - dagster-postgres
 
   dagster-postgres:
     image: postgres:13.3
