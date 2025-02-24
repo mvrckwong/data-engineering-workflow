@@ -4,7 +4,7 @@ name: dagster-instance-stg
 x-dagster-common: &dagster-common
   build:
     context: .
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.stg
   env_file:
     - .env
 

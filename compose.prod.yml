@@ -1,4 +1,4 @@
-name: dagster-instance-stg
+name: dagster-instance-prod
 
 # Common configuration
 x-dagster-common: &dagster-common
