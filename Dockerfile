@@ -17,19 +17,17 @@
 # CMD ["dagster-webserver", "-w", "workspace.yaml", "-h", "0.0.0.0", "-p", "3000"]
 
 
-
 # Build stage
 FROM python:3.11-slim as builder
 
 WORKDIR /usr/src/app
 ENV DAGSTER_HOME=/usr/src/app
 
-# Copy only dependency files first
-COPY pyproject.toml setup.cfg setup.py ./
+# Copy dependency specifications
+COPY setup.py ./
 
-# Install dependencies in a single layer with cleanup
-RUN pip install --no-cache-dir dagster dagster-webserver dagit \
-    dagster-postgres dagster-dbt SQLAlchemy==1.4.49 pandas pyarrow && \
+# Install package and dependencies
+RUN pip install --no-cache-dir . && \
     rm -rf /root/.cache/pip/*
 
 # Final stage
@@ -44,5 +42,4 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Copy application files
 COPY ./configs/dagster.yaml ./configs/workspace.yaml ./
-# COPY ./dagster.yaml ./workspace.yaml ./
 COPY etl ./etl

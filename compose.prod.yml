@@ -1,26 +1,41 @@
+name: dagster-instance-stg
+
+# Common configuration
+x-dagster-common: &dagster-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+
 services:
 
-  dagster-dagit:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  webserver:
+    <<: *dagster-common
+    restart: on-failure
+    tty: true
+    command: ["dagster-webserver", "-w", "workspace.yaml", "-h", "0.0.0.0"]
     ports:
-      - 3000:3000
+      - ${PORT_DG_WEBSERVER:-3030}:3000
+    depends_on:
+      - dagster-postgres
 
-  dagster-daemon:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  daemon:
+    <<: *dagster-common
+    restart: always
     command: ["dagster-daemon", "run"]
-    environment:
-      - PGPASS=${PGPASS}
-      - PGUID=${PGUID}
+    # environment:
+    #   - PGPASS=${PGPASS}
+    #   - PGUID=${PGUID}
+    depends_on:
+      - dagster-postgres
 
   dagster-postgres:
     image: postgres:13.3
     ports:
       - 5432:5432
     environment:
+      - POSTGRES_USER=${POSTGRES_DG_USER}
       - POSTGRES_PASSWORD=${PGPASS}
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
