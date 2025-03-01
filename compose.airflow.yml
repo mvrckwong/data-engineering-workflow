@@ -58,8 +58,8 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_owner:npg_UEA1MTK8gQRh@ep-falling-fog-a1hc9xqp-pooler.ap-southeast-1.aws.neon.tech/airflow?sslmode=require
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow_owner:npg_UEA1MTK8gQRh@ep-falling-fog-a1hc9xqp-pooler.ap-southeast-1.aws.neon.tech/airflow?sslmode=require
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
