@@ -58,8 +58,8 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_owner:npg_UEA1MTK8gQRh@ep-falling-fog-a1hc9xqp-pooler.ap-southeast-1.aws.neon.tech/airflow?sslmode=require
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow_owner:npg_UEA1MTK8gQRh@ep-falling-fog-a1hc9xqp-pooler.ap-southeast-1.aws.neon.tech/airflow?sslmode=require
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW_DB_URL}
+    AIRFLOW__CELERY__RESULT_BACKEND: ${CELERY_DB_URL}
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -84,6 +84,8 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/tests:/opt/airflow/tests
     - ${AIRFLOW_PROJ_DIR:-.}/.output:/opt/airflow/output
   user: "${AIRFLOW_UID:-50000}:0"
+  env_file:
+    - .env
   depends_on:
     &airflow-common-depends-on
     redis:
@@ -231,8 +233,8 @@ services:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _AIRFLOW_WWW_USER_USERNAME: airflow
+      _AIRFLOW_WWW_USER_PASSWORD: airflow
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
