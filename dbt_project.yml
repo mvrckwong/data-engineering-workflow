@@ -15,7 +15,7 @@ profile: 'bigquery-general-profile'
 model-paths: ["dbt/models"]
 analysis-paths: ["dbt/analyses"]
 test-paths: ["dbt/tests"]
-seed-paths: ["dbt/seeds"]
+seed-paths: ["data/seeds"]
 macro-paths: ["dbt/macros"]
 snapshot-paths: ["dbt/snapshots"]
 
@@ -23,7 +23,6 @@ target-path: "target"  # directory which will store compiled SQL files
 clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
-
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models

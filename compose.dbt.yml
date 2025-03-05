@@ -10,6 +10,7 @@ x-common-config:
     - ./dbt_project.yml:/usr/app/dbt_project.yml
     - ./dbt:/usr/app/dbt
     - ./config:/root/.dbt
+    - ./data:/usr/app/data
   env_file: 
     - .env
 
