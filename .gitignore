@@ -1,7 +1,11 @@
 # Custom
 logs/
 *ipynb
+*csv
 uv.lock
+profiles.yml
+bq-keyfile.json
+.user.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
