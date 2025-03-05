@@ -22,13 +22,13 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/tests:/opt/airflow/tests
-    - ${AIRFLOW_PROJ_DIR:-.}/dbt:/opt/airflow/dbt
     - ${AIRFLOW_PROJ_DIR:-.}/.output:/opt/airflow/.output
-    - ./data:/opt/airflow/data
+    - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
 
-    - ./dbt_project.yml:/opt/airflow/dbt_project.yml
-    - ./config:/home/airflow/.dbt
-    - ./config:/root/.dbt
+    - ${AIRFLOW_PROJ_DIR:-.}/dbt:/opt/airflow/dbt
+    - ${AIRFLOW_PROJ_DIR:-.}/dbt_project.yml:/opt/airflow/dbt_project.yml
+    - ${AIRFLOW_PROJ_DIR:-.}/config:/home/airflow/.dbt
+    - ${AIRFLOW_PROJ_DIR:-.}/config:/root/.dbt
   user: root
   env_file:
     - .env
@@ -40,8 +40,8 @@ x-airflow-common:
 services:
   redis:
     image: redis:7.2-bookworm
-    ports:
-      - "${PORT_AF_REDIS:-6379}:6379"
+    expose:
+      - 6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
