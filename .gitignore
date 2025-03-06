@@ -1,8 +1,7 @@
 # Custom
 logs/
+seeds/
 *ipynb
-*csv
-
 bq-keyfile.json
 .user.yml
 
