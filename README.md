@@ -21,7 +21,7 @@ You can run the pipeline using `uv` package by running the following command:
 uv run dbt run
 ```
 
-In addition, you can run the `dbt` pipeline using `docker compose` command by running the following command:
+In addition, you can run the `dbt` pipeline using `docker compose` command. This enables to check the dbt pipelines inside a docker container. You can run the pipeline inside the `dbt` container by running the following command:
 
 ```bash
 docker compose -f compose.dbt.yml up -d --build
