@@ -8,7 +8,7 @@ with DAG(
     dag_id='test-dbt_test_all',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
-    on_success_callback=[on_success_callback],
+    #on_success_callback=[on_success_callback],
     tags=['dbt', 'tool-based']
 ) as dag:
 
@@ -22,7 +22,7 @@ with DAG(
     dag_id='test-dbt_run_all',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
-    on_success_callback=[on_success_callback],
+    #on_success_callback=[on_success_callback],
     tags=['dbt', 'tool-based']
 ) as dag:
 
@@ -36,7 +36,7 @@ with DAG(
     dag_id='test-dbt_overall',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
-    on_success_callback=[on_success_callback],
+    #on_success_callback=[on_success_callback],
     tags=['dbt', 'tool-based']
 ) as dag:
 
@@ -63,7 +63,7 @@ with DAG(
     dag_id='test-dbt_layer_bronze',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
-    on_success_callback=[on_success_callback],
+    #on_success_callback=[on_success_callback],
     tags=['dbt', 'tool-based']
 ) as dag:
 
@@ -76,7 +76,7 @@ with DAG(
     dag_id='test-dbt_layer_silver',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
-    on_success_callback=[on_success_callback],
+    #on_success_callback=[on_success_callback],
     tags=['dbt', 'tool-based']
 ) as dag:
 
@@ -89,7 +89,7 @@ with DAG(
     dag_id='test-dbt_layer_gold',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
-    on_success_callback=[on_success_callback],
+    #on_success_callback=[on_success_callback],
     tags=['dbt', 'tool-based']
 ) as dag:
 
