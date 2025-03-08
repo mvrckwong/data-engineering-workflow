@@ -1,4 +1,18 @@
-## Prequisites
+# Data Engineering - Workflow
+
+The project implements general workflow for data engineering projects. This aims to create a general workflow for data engineering projects.
+
+## Getting Started
+
+### Prequisites
+
+
+### Running the Application
+
+## Reference
+- [dbt](https://docs.getdbt.com/docs/introduction)
+
+<!-- ## Prequisites
 
 ## Testing and Validation
 
@@ -26,4 +40,4 @@ uv run dbt run
 ```
 
 ## References
-- 
+-  -->
