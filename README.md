@@ -1,11 +1,17 @@
 # Data Engineering - Workflow
-
+<a name="readme-top"></a>
 The project implements general workflow for data engineering projects. This aims to create a general workflow for data engineering projects.
 
 ## Getting Started
 
 ### Prequisites
 
+Before running the application or pipeline, you should have the following installed in your local machine or server.
+- Python 3.11 or higher
+- UV package
+- Docker
+
+This is required in developing, testing and deploying the application in local or remote server. Moreover, this can be tested inside the CLI using the `uv` package and `docker compose` command for local and production environments.
 
 ### Running the Application
 
