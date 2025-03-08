@@ -39,10 +39,10 @@ models:
     +materialized: table  # Default materialization for all models
     bronze:
       +schema: bronze    # Use schema instead of database for BigQuery
-      +tags: ["raw", "intermediate"]
+      +tags: ["raw", "bronze"]
     silver:
       +schema: silver
-      +tags: ["stg", "staging"]
+      +tags: ["stg", "silver"]
     gold:
       +schema: prod
-      +tags: ["prod", "production"]
+      +tags: ["prod", "gold"]
