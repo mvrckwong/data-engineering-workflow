@@ -21,8 +21,21 @@ You can run the pipeline using `uv` package by running the following command:
 uv run dbt run
 ```
 
+In addition, you can run the `dbt` pipeline using `docker compose` command by running the following command:
+
+```bash
+docker compose -f compose.dbt.yml up -d --build
+```
+
+Finally, you can run the pipeline inside the `airflow` container by running the following command:
+
+```bash
+docker compose -f compose.airflow.yml up -d --build
+```
+
 ## Reference
 - [dbt](https://docs.getdbt.com/docs/introduction)
+- [airflow](https://airflow.apache.org/)
 
 <!-- ## Prequisites
 
