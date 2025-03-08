@@ -5,7 +5,7 @@ from airflow.providers.slack.notifications.slack_webhook import \
     send_slack_webhook_notification
 
 with DAG(
-    dag_id='dbt_test_all',
+    dag_id='test-dbt_test_all',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
     on_success_callback=[on_success_callback],
@@ -19,7 +19,7 @@ with DAG(
  
 
 with DAG(
-    dag_id='dbt_run_all',
+    dag_id='test-dbt_run_all',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
     on_success_callback=[on_success_callback],
@@ -33,7 +33,7 @@ with DAG(
 
 
 with DAG(
-    dag_id='dbt_overall',
+    dag_id='test-dbt_overall',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
     on_success_callback=[on_success_callback],
@@ -60,7 +60,7 @@ with DAG(
  
 
 with DAG(
-    dag_id='dbt_layer_bronze',
+    dag_id='test-dbt_layer_bronze',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
     on_success_callback=[on_success_callback],
@@ -73,7 +73,7 @@ with DAG(
 	)
  
 with DAG(
-    dag_id='dbt_layer_silver',
+    dag_id='test-dbt_layer_silver',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
     on_success_callback=[on_success_callback],
@@ -86,7 +86,7 @@ with DAG(
 	)
  
 with DAG(
-    dag_id='dbt_layer_gold',
+    dag_id='test-dbt_layer_gold',
     start_date=datetime(2024, 1, 1),
     schedule_interval=None,
     on_success_callback=[on_success_callback],
