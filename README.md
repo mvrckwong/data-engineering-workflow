@@ -4,7 +4,7 @@ The project implements general workflow for data engineering projects. This aims
 
 ## Getting Started
 
-### Prequisites
+### Prequisite
 
 Before running the application or pipeline, you should have the following installed in your local machine or server.
 - Python 3.11 or higher
@@ -14,6 +14,12 @@ Before running the application or pipeline, you should have the following instal
 This is required in developing, testing and deploying the application in local or remote server. Moreover, this can be tested inside the CLI using the `uv` package and `docker compose` command for local and production environments.
 
 ### Running the Application
+
+You can run the pipeline using `uv` package by running the following command:
+
+```bash
+uv run dbt run
+```
 
 ## Reference
 - [dbt](https://docs.getdbt.com/docs/introduction)
@@ -41,7 +47,7 @@ docker-compose exec dbt dbt docs generate
 - Make sure python 3.11 or higher is installed.
 - Make sure that uv is installed.
 
-```
+```bash
 uv run dbt run
 ```
 
