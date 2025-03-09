@@ -1,7 +1,7 @@
 no,dag_id,dag_display_name,start_date,end_date,schedule_interval,tags,doc_md,description
-1,test-dbt_layer_bronze,test - bronze dbt layer,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
-2,test-dbt_layer_gold,test - gold dbt layer,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
-3,test-dbt_layer_silver,test - silver dbt layer,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
-4,test-dbt_overall,test - dbt pipeline,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
-5,test-dbt_run_all,test - dbt run,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
-6,test-dbt_test_all,test - dbt test,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
+1,test-dbt_layer_bronze,test - dbt layer bronze,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",Basic run and test from the dbt workflow.,Basic run and test from the dbt workflow.
+2,test-dbt_layer_gold,test - dbt layer gold,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",Basic run and test from the dbt workflow.,Basic run and test from the dbt workflow.
+3,test-dbt_layer_silver,test - dbt layer silver,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",Basic run and test from the dbt workflow.,Basic run and test from the dbt workflow.
+4,test-dbt_overall,test - dbt pipeline,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",Basic run and test from the dbt workflow.,Basic run and test from the dbt workflow.
+5,test-dbt_run_all,test - dbt run,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",Basic run and test from the dbt workflow.,Basic run and test from the dbt workflow.
+6,test-dbt_test_all,test - dbt test,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",Basic run and test from the dbt workflow.,Basic run and test from the dbt workflow.
