@@ -1,7 +1,7 @@
-no,dag_id,start_date,end_date,schedule_interval,depends_on_past,owner,tags,doc_md
-1,test-dbt_layer_bronze,2024-01-01,2025-01-01,None,FALSE,Maverick Wong,"dbt, tool-based",Description
-2,test-dbt_layer_gold,2024-01-01,2025-01-01,None,FALSE,Maverick Wong,"dbt, tool-based",Description
-3,test-dbt_layer_silver,2024-01-01,2025-01-01,None,FALSE,Maverick Wong,"dbt, tool-based",Description
-4,test-dbt_overall,2024-01-01,2025-01-01,None,TRUE,Maverick Wong,"dbt, tool-based",Description
-5,test-dbt_run_all,2024-01-01,2025-01-01,None,TRUE,Maverick Wong,"dbt, tool-based",Description
-6,test-dbt_test_all,2024-01-01,2025-01-01,None,TRUE,Maverick Wong,"dbt, tool-based",Description
+no,dag_id,dag_display_name,start_date,end_date,schedule_interval,tags,doc_md,description
+1,test-dbt_layer_bronze,test - bronze dbt layer,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
+2,test-dbt_layer_gold,test - gold dbt layer,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
+3,test-dbt_layer_silver,test - silver dbt layer,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
+4,test-dbt_overall,test - dbt pipeline,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
+5,test-dbt_run_all,test - dbt run,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
+6,test-dbt_test_all,test - dbt test,2024-01-01,2025-01-01,0 5 * * 1 ,"test, dev, dbt",doc from csv file,description from csv file
