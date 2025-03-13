@@ -1,4 +1,6 @@
 # Custom
+dbt_packages/
+package-lock.yml
 logs/
 seeds/
 data/

@@ -5,10 +5,10 @@
 }}
 
 WITH source AS (
-      SELECT
+	SELECT
 		*
-      FROM 
-            {{ ref('Stores') }}
+	FROM 
+		{{ ref('Stores') }}
 )
 SELECT
 	*

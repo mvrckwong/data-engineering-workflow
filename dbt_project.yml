@@ -46,3 +46,9 @@ models:
     gold:
       +schema: prod
       +tags: ["prod", "gold"]
+
+
+snapshots:
+  +schema: silver
+  +target_schema: silver
+  +enabled: true
