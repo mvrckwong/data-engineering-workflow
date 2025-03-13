@@ -6,10 +6,10 @@
 }}
 
 WITH source AS (
-      SELECT
+	SELECT
 		*
-      FROM 
-            {{ ref('stg_seed_returns') }}
+	FROM 
+		{{ ref('stg_seed_returns') }}
 )
 SELECT
 	*
