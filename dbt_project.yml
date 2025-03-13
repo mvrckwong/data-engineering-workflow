@@ -47,8 +47,8 @@ models:
       +schema: prod
       +tags: ["prod", "gold"]
 
-
 snapshots:
-  +schema: silver
-  +target_schema: silver
-  +enabled: true
+  bigquery-general:
+    +schema: silver
+    +target_schema: silver
+    +enabled: true
