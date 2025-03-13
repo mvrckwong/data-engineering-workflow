@@ -15,7 +15,7 @@ profile: 'bigquery-general-profile'
 model-paths: ["dbt/models"]
 analysis-paths: ["dbt/analyses"]
 test-paths: ["dbt/tests"]
-seed-paths: ["data"]
+seed-paths: ["data/seeds"]
 macro-paths: ["dbt/macros"]
 snapshot-paths: ["dbt/snapshots"]
 

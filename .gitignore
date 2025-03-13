@@ -3,7 +3,7 @@ dbt_packages/
 package-lock.yml
 logs/
 seeds/
-data/
+data/seeds
 *ipynb
 bq-keyfile.json
 .user.yml
