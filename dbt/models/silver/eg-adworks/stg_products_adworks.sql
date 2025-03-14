@@ -3,7 +3,6 @@
         materialized='incremental',
         incremental_strategy='merge',
         unique_key='product_key',
-        dataset='silver',
         tags=['tests']
     )
 }}
@@ -19,8 +18,8 @@ SELECT
     ) }},
 
     -- SCD columns
-    dbt_valid_from AS valid_from,
-    dbt_valid_to AS valid_to,
-    (dbt_valid_to IS NULL) AS is_current
+    dbt_valid_from AS _valid_from,
+    dbt_valid_to AS _valid_to,
+    (dbt_valid_to IS NULL) AS _is_current
 FROM 
     {{ ref('snap_products_adworks') }}

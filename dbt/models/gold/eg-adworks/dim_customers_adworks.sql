@@ -4,7 +4,7 @@
         incremental_strategy='merge',
         unique_key='customer_key',
         partition_by={
-            "field": "valid_from", 
+            "field": "_valid_from", 
             "data_type": "timestamp", 
             "granularity": "day"
         },
@@ -19,8 +19,8 @@ FROM
     {{ ref('stg_customers_adworks') }}
 
 {% if is_incremental() %}
-    WHERE valid_from > (
-        SELECT MAX(valid_from) 
+    WHERE _valid_from > (
+        SELECT MAX(_valid_from) 
         FROM {{ this }}
     )
 {% endif %}
