@@ -2,7 +2,7 @@
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
-name: 'bigquery'
+name: 'bigquery_general'
 version: '1.0.0'
 config-version: 2
 
@@ -35,7 +35,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 # using the `{{ config(...) }}` macro.
 
 models:
-  bigquery-general:
+  bigquery_general:
     +materialized: table  # Default materialization for all models
     bronze:
       +schema: bronze    # Use schema instead of database for BigQuery
@@ -44,11 +44,11 @@ models:
       +schema: silver
       +tags: ["stg", "silver"]
     gold:
-      +schema: prod
+      +schema: gold
       +tags: ["prod", "gold"]
 
 snapshots:
-  bigquery-general:
+  bigquery_general:
     +schema: silver
     +target_schema: silver
     +enabled: true

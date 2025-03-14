@@ -15,5 +15,14 @@ run_dbt_debug:
 	docker compose -f compose.dbt.yml down
 	docker compose -f compose.dbt.yml up -d --build
 
+run_dbt_gold:
+	uv run dbt run --select tag:gold
+
+run_dbt_silver:
+	uv run dbt run --select tag:silver
+
+run_dbt_bronze:
+	uv run dbt run --select tag:bronze
+
 reload_reqs:
 	uv pip freeze > .devcontainer/requirements.txt
