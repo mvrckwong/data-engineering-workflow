@@ -13,7 +13,7 @@
     )
 }}
 
-select
+SELECT
     {{ dbt_utils.generate_surrogate_key(['store_id', 'dbt_valid_from']) }} as store_key,
     {{ dbt_utils.star(
         from=ref('stg_adworks_stores_snapshot'),
@@ -22,8 +22,12 @@ select
     dbt_valid_from as valid_from,
     dbt_valid_to as valid_to,
     (dbt_valid_to is null) as is_current
-from {{ ref('stg_adworks_stores_snapshot') }}
+FROM 
+    {{ ref('stg_adworks_stores_snapshot') }}
 
 {% if is_incremental() %}
-    where dbt_valid_from > (select max(valid_from) from {{ this }})
+    WHERE dbt_valid_from > (
+        SELECT max(valid_from) 
+        FROM {{ this }}
+    )
 {% endif %}
