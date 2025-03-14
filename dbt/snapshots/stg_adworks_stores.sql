@@ -2,7 +2,6 @@
 
 {{
 	config(
-		dataset='silver',
 		unique_key='store_id',
 		strategy='check',
 		check_cols=[
@@ -17,7 +16,8 @@
 			'total_sqft',
 			'grocery_sqft'
 		],
-		invalidate_hard_deletes=True
+		invalidate_hard_deletes=True,
+        tags=['tests']
 	)
 }}
 

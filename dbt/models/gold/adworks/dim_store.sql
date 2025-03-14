@@ -9,7 +9,7 @@
             "granularity": "day"
         },
         cluster_by=['store_id', 'is_current'],
-        dataset='gold'
+        tags=['tests']
     )
 }}
 

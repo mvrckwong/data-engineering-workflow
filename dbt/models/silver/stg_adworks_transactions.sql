@@ -14,8 +14,8 @@
 WITH raw_transactions AS (
     SELECT
         *,
-        PARSE_DATE('%m/%d/%Y', transaction_date) AS parsed_transaction_date,
-        PARSE_DATE('%m/%d/%Y', stock_date) AS parsed_stock_date
+        PARSE_DATE('%m/%d/%Y', transaction_date) AS transaction_date,
+        PARSE_DATE('%m/%d/%Y', stock_date) AS stock_date
     FROM {{ ref('raw_adworks_transactions') }}
     {% if is_incremental() %}
         WHERE PARSE_DATE('%m/%d/%Y', transaction_date) > (
