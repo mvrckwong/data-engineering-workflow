@@ -1,6 +1,7 @@
 {{
     config(
         materialized='incremental',
+        incremental_strategy='merge',
         unique_key='customer_key',
         dataset='silver',
         tags=['tests']
