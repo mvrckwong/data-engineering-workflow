@@ -3,7 +3,7 @@
         materialized='incremental',
         incremental_strategy='merge',
         unique_key='store_key',
-        tags=['tests']
+        tags=['eg']
     )
 }}
 

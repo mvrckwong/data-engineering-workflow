@@ -9,7 +9,7 @@
             "granularity": "day"
         },
         cluster_by=['product_key'],
-        tags=['tests']
+        tags=['eg']
     )
 }}
 

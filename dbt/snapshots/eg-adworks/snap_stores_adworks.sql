@@ -17,7 +17,7 @@
 			'grocery_sqft'
         ],
         invalidate_hard_deletes=True,
-        tags=['tests']
+        tags=['eg']
     )
 }}
 
