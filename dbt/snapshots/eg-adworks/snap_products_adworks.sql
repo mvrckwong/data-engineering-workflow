@@ -1,4 +1,4 @@
-{% snapshot snap_customers_adworks %}
+{% snapshot snap_products_adworks %}
 
 {{
     config(
