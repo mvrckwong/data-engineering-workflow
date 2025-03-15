@@ -2,24 +2,36 @@
     config(
         materialized='incremental',
         incremental_strategy='merge',
-        unique_key='product_key',
+        unique_key='product_id',
+        on_schema_change='sync_all_columns',
         tags=['eg']
     )
 }}
 
-SELECT
-    {{ dbt_utils.generate_surrogate_key(['product_id', 'dbt_valid_from']) }} AS product_key,
-    {{ dbt_utils.star(
-        from=ref('snap_products_adworks'),
-        except=[
-            'dbt_valid_from',
-            'dbt_valid_to'
-        ]
-    ) }},
+-- insert general transformations here,
+-- including joining, cleaning, type conversion, renaming
+-- including testing, validation processes
 
-    -- SCD columns
-    dbt_valid_from AS _valid_from,
-    dbt_valid_to AS _valid_to,
-    (dbt_valid_to IS NULL) AS _is_current
+SELECT
+    *
+    , CURRENT_TIMESTAMP() AS _extrated_date
 FROM 
-    {{ ref('snap_products_adworks') }}
+    {{ ref('raw_products_adworks') }}
+
+{% if is_incremental() %}
+
+WHERE
+    -- This assumes your source data has an updated_at or similar field
+    -- Change the field name to match your actual data
+    -- updated_at > (
+    --     SELECT MAX(updated_at) 
+    --     FROM {{ this }}
+    -- )
+    
+    -- Alternatively, if you don't have an updated_at field:
+    product_id NOT IN (
+        SELECT product_id 
+        FROM {{ this }}
+    )
+
+{% endif %}

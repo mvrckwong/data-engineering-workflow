@@ -1,4 +1,4 @@
-{% snapshot snap_stores_adworks %}
+{% snapshot snap_customers_adworks %}
 
 {{
     config(
@@ -24,6 +24,6 @@
 SELECT 
     * 
 FROM 
-    {{ ref('raw_stores_adworks') }}
+    {{ ref('stg_stores_adworks') }}
 
 {% endsnapshot %}

@@ -1,4 +1,4 @@
-{% snapshot snap_products_adworks %}
+{% snapshot snap_customers_adworks %}
 
 {{
     config(
@@ -13,13 +13,13 @@
 			'product_weight'
         ],
         invalidate_hard_deletes=True,
-        tags=['eg']
+        tags=['tests']
     )
 }}
 
 SELECT 
     * 
 FROM 
-    {{ ref('raw_products_adworks') }}
+    {{ ref('stg_products_adworks') }}
 
 {% endsnapshot %}
