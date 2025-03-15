@@ -4,7 +4,7 @@
         incremental_strategy='merge',
         unique_key='store_id',
         on_schema_change='sync_all_columns',
-        tags=['tests']
+        tags=['eg']
     )
 }}
 
@@ -12,11 +12,18 @@
 -- including joining, cleaning, type conversion, renaming
 -- including testing, validation processes
 
-SELECT
-    *
-    , CURRENT_TIMESTAMP() AS _extrated_date
+WITH source AS (
+    SELECT
+        *
+        , CURRENT_TIMESTAMP() AS _extrated_date
+    FROM 
+        {{ ref('raw_stores_adworks') }}
+)
+
+SELECT 
+    * 
 FROM 
-    {{ ref('raw_stores_adworks') }}
+    source
 
 {% if is_incremental() %}
 

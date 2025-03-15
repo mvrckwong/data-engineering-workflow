@@ -12,11 +12,18 @@
 -- including joining, cleaning, type conversion, renaming
 -- including testing, validation processes
 
-SELECT
-    *
-    , CURRENT_TIMESTAMP() AS _extrated_date
+WITH source AS (
+    SELECT
+        *
+        , CURRENT_TIMESTAMP() AS _extrated_date
+    FROM 
+        {{ ref('raw_products_adworks') }}
+)
+
+SELECT 
+    * 
 FROM 
-    {{ ref('raw_products_adworks') }}
+    source
 
 {% if is_incremental() %}
 
