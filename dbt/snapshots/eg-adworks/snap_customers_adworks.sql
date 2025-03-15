@@ -1,4 +1,5 @@
 {% snapshot snap_customers_adworks %}
+
 {{
     config(
         unique_key='customer_id',
@@ -12,6 +13,7 @@
             'customer_country'
         ],
         invalidate_hard_deletes=True,
+        updated_at='_extrated_date',
         tags=['tests']
     )
 }}
