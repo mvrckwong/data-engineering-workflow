@@ -9,6 +9,7 @@
 
 -- insert general transformations here,
 -- including joining, cleaning, type conversion, renaming
+-- including testing, validation processes
 
 SELECT
     *

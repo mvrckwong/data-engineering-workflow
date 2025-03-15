@@ -29,7 +29,7 @@ SELECT
     dbt_valid_from AS _valid_from,
     dbt_valid_to AS _valid_to,
     (dbt_valid_to IS NULL) AS _is_current,
-    CURRENT_TIMESTAMP AS _last_updated
+    CURRENT_TIMESTAMP() AS _last_updated
 
 FROM {{ ref('snap_customers_adworks') }}
 
