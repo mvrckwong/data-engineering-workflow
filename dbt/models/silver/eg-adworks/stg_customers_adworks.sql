@@ -2,24 +2,15 @@
     config(
         materialized='incremental',
         incremental_strategy='merge',
-        unique_key='customer_key',
-        tags=['eg']
+        unique_key='customer_id',
+        tags=['tests']
     )
 }}
 
-SELECT
-    {{ dbt_utils.generate_surrogate_key(['customer_id', 'dbt_valid_from']) }} AS customer_key,
-    {{ dbt_utils.star(
-        from=ref('snap_customers_adworks'),
-        except=[
-            'dbt_valid_from',
-            'dbt_valid_to'
-        ]
-    ) }},
+-- insert general transformations here,
+-- including joining, cleaning, type conversion, renaming
 
-    -- SCD columns
-    dbt_valid_from AS _valid_from,
-    dbt_valid_to AS _valid_to,
-    (dbt_valid_to IS NULL) AS _is_current
+SELECT
+    *
 FROM 
-    {{ ref('snap_customers_adworks') }}
+    {{ ref('raw_customers_adworks') }}
