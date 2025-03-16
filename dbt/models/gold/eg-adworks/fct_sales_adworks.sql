@@ -1,76 +1,77 @@
 {{
     config(
-        materialized = 'incremental',
-        incremental_strategy='merge',
-        unique_key = 'transaction_id',
-        partition_by = {
-            "field": "transaction_date",
-            "data_type": "date"
-        },
-        cluster_by = [
-            "store_id", 
-            "product_id"
-        ],
-        on_schema_change='sync_all_columns',
-        tags=['gold', 'sales']
+        materialized='incremental'
+        , incremental_strategy='merge'
+        , unique_key='transaction_key'
+        , partition_by={
+            "field": "transaction_date"
+            , "data_type": "date"
+            , "granularity": "day"
+        }
+        , cluster_by=[
+            'product_id'
+            , 'customer_id'
+            , 'store_id'
+        ]
+        , on_schema_change='sync_all_columns'
+        , tags=['sales_fact']
     )
 }}
 
-WITH sales_data AS (
+WITH source AS (
     SELECT
-        transaction_id,
-        transaction_date,
-        stock_date,
-        product_id,
-        customer_id,
-        store_id,
-        quantity,
-        _extrated_date
+        {{ dbt_utils.star(from=ref('stg_sales_adworks')) }}
     FROM 
         {{ ref('stg_sales_adworks') }}
     
     {% if is_incremental() %}
-        WHERE _extrated_date > (
-            SELECT 
-                MAX(_extrated_date) 
-            FROM 
-                {{ this }}
+    WHERE
+        transaction_date > (
+            SELECT MAX(transaction_date) 
+            FROM {{ this }}
         )
     {% endif %}
 ),
 
--- Add date keys for efficient joins to date dimension
-sales_with_date_keys AS (
+transformed_data AS (
     SELECT
-        *,
-        FORMAT_DATE('%Y%m%d', transaction_date) AS transaction_date_key,
-        FORMAT_DATE('%Y%m%d', stock_date) AS stock_date_key
-    FROM
-        sales_data
+        {{ dbt_utils.generate_surrogate_key(
+            ['transaction_date', 'product_id', 'customer_id', 'store_id', 'quantity']
+        ) }} AS transaction_key
+        
+        -- All transaction fact columns
+        , {{ dbt_utils.star(
+            from=ref('stg_sales_adworks'), 
+            relation_alias='s', 
+            except=['_extracted_at']
+        ) }}
+        
+        -- Foreign keys to dimensions
+        , {{ dbt_utils.generate_surrogate_key(['product_id']) }} AS product_key
+        , {{ dbt_utils.generate_surrogate_key(['customer_id']) }} AS customer_key
+        , {{ dbt_utils.generate_surrogate_key(['store_id']) }} AS store_key
+        
+        -- Metadata
+        , _extracted_at
+    FROM 
+        source s
+),
+
+metrics AS (
+    SELECT
+        t.*
+        
+        -- Business metrics calculations
+        , DATE_DIFF(transaction_date, stock_date, DAY) AS days_in_stock
+        , CASE
+            WHEN EXTRACT(DAYOFWEEK FROM transaction_date) IN (1, 7) THEN 'Weekend'
+            ELSE 'Weekday'
+          END AS day_type
+    FROM 
+        transformed_data t
 )
 
-SELECT
-    -- Original transaction ID serves as a natural key
-    transaction_id,
-    
-    -- Date information with keys for joining to date dimension
-    transaction_date,
-    transaction_date_key,
-    stock_date,
-    stock_date_key,
-    
-    -- Dimension IDs for joining directly to dimension tables
-    -- BigQuery performs efficiently with these joins when properly clustered
-    product_id,
-    customer_id,
-    store_id,
-    
-    -- Metrics
-    quantity,
-    
-    -- Derived metrics (add more as needed)
-    1 AS transaction_count,  -- Count of transactions
-
-    _extrated_date,
-FROM
-    sales_with_date_keys
+SELECT 
+    * 
+FROM 
+    metrics
