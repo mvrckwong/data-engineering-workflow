@@ -3,6 +3,7 @@
         materialized='incremental',
         incremental_strategy='merge',
         unique_key='product_id',
+        cluster_by=['product_brand'],
         on_schema_change='sync_all_columns',
         tags=['eg']
     )

@@ -3,6 +3,7 @@
         materialized='incremental',
         incremental_strategy='merge',
         unique_key='store_id',
+        cluster_by=['region_id', 'store_type', 'store_country'],
         on_schema_change='sync_all_columns',
         tags=['eg']
     )
@@ -11,6 +12,7 @@
 -- insert general transformations here,
 -- including joining, cleaning, type conversion, renaming
 -- including testing, validation processes
+-- workflow: raw -> silver -> snapshot -> gold
 
 WITH source AS (
     SELECT
