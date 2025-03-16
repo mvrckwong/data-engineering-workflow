@@ -23,12 +23,12 @@ services:
     ports:
       - "${PORT_DBT_UI:-8888}:8080"
   
-  run:
-    <<: *dbt-common-config
-    command: ["run"]
-    restart: no
+  # run:
+  #   <<: *dbt-common-config
+  #   command: ["run"]
+  #   restart: no
   
-  test:
-    <<: *dbt-common-config
-    command: ["test"]
-    restart: no
+  # test:
+  #   <<: *dbt-common-config
+  #   command: ["test"]
+  #   restart: no
