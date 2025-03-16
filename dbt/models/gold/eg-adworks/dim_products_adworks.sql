@@ -10,8 +10,7 @@
             , "granularity": "day"
         },
         cluster_by=[
-            'product_key'
-            , '_is_current'
+            'product_brand'
         ],
         tags=['eg']
     )
@@ -34,7 +33,9 @@ WITH source AS (
 
 -- Final dimension table with enriched attributes
 SELECT
-    {{ dbt_utils.generate_surrogate_key(['s.product_id', 's.dbt_valid_from']) }} AS product_key
+    {{ dbt_utils.generate_surrogate_key(
+        ['s.product_id', 's.dbt_valid_from']
+    ) }} AS product_key
     , {{ dbt_utils.star(
         from=ref('snap_products_adworks'), 
         relation_alias='s', 

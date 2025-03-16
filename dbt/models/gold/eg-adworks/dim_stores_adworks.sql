@@ -10,8 +10,9 @@
             , "granularity": "day"
         },
         cluster_by=[
-            'store_key'
-            , '_is_current'
+            'region_id', 
+            'store_type', 
+            'store_country'
         ],
         tags=['eg']
     )
@@ -34,7 +35,9 @@ WITH source AS (
 
 -- Final dimension table with enriched attributes
 SELECT
-    {{ dbt_utils.generate_surrogate_key(['s.store_id', 's.dbt_valid_from']) }} AS store_key
+    {{ dbt_utils.generate_surrogate_key(
+        ['s.store_id', 's.dbt_valid_from']
+    ) }} AS store_key
     , {{ dbt_utils.star(
         from=ref('snap_stores_adworks'), 
         relation_alias='s', 

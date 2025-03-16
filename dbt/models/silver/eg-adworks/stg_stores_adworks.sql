@@ -3,7 +3,11 @@
         materialized='incremental',
         incremental_strategy='merge',
         unique_key='store_id',
-        cluster_by=['region_id', 'store_type', 'store_country'],
+        cluster_by=[
+            'region_id', 
+            'store_type', 
+            'store_country'
+        ],
         on_schema_change='sync_all_columns',
         tags=['eg']
     )

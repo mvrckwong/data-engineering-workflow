@@ -3,7 +3,10 @@
         materialized='incremental',
         incremental_strategy='merge',
         unique_key='region_id',
-        cluster_by=['sales_district', 'sales_region'],
+        cluster_by=[
+            'sales_district', 
+            'sales_region'
+        ],
         on_schema_change='sync_all_columns',
         tags=['eg']
     )
