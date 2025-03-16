@@ -13,7 +13,7 @@
             'customer_country'
         ],
         invalidate_hard_deletes=True,
-        tags=['tests']
+        tags=['eg']
     )
 }}
 

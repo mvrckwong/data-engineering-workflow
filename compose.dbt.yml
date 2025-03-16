@@ -19,7 +19,7 @@ services:
     <<: *dbt-common-config
     tty: true
     entrypoint: /bin/sh
-    command: -c "dbt docs generate && dbt docs serve --port 8080 --host 0.0.0.0"
+    command: -c "dbt deps && dbt docs generate && dbt docs serve --port 8080 --host 0.0.0.0"
     ports:
       - "${PORT_DBT_UI:-8888}:8080"
   
