@@ -25,27 +25,35 @@ WITH source AS (
         {{ ref('snap_customers_adworks') }}
     
     {% if is_incremental() %}
-    WHERE dbt_valid_from > (
-        SELECT MAX(_valid_from) 
-        FROM {{ this }}
-    )
+    WHERE
+        dbt_valid_from > (
+            SELECT MAX(_valid_from) 
+            FROM {{ this }}
+        )
     {% endif %}
-)
+),
 
 -- Final dimension table with enriched attributes
-SELECT
-    {{ dbt_utils.generate_surrogate_key(
-        ['s.customer_id', 's.dbt_valid_from']
-    ) }} AS customer_key
-    , {{ dbt_utils.star(
-        from=ref('snap_customers_adworks'), 
-        relation_alias='s', 
-        except=['dbt_valid_from', 'dbt_valid_to']
-    ) }}
-    
-    -- SCD metadata
-    , s.dbt_valid_from AS _valid_from
-    , s.dbt_valid_to AS _valid_to
-    , s.is_current AS _is_current
+final AS (
+    SELECT
+        {{ dbt_utils.generate_surrogate_key(
+            ['s.customer_id', 's.dbt_valid_from']
+        ) }} AS customer_key
+        , {{ dbt_utils.star(
+            from=ref('snap_customers_adworks'), 
+            relation_alias='s', 
+            except=['dbt_valid_from', 'dbt_valid_to']
+        ) }}
+        
+        -- SCD metadata
+        , s.dbt_valid_from AS _valid_from
+        , s.dbt_valid_to AS _valid_to
+        , s.is_current AS _is_current
+    FROM 
+        source s
+)
 
-FROM source s
+SELECT 
+    * 
+FROM 
+    final
