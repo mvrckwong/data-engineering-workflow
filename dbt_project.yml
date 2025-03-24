@@ -79,3 +79,8 @@ snapshots:
     +schema: silver
     +target_schema: silver
     +enabled: true
+
+seeds:
+  bigquery_general:
+    adworks_deprecated:
+      +enabled: false

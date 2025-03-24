@@ -9,7 +9,8 @@
 			'sales_region'
         ],
         invalidate_hard_deletes=True,
-        tags=['eg']
+        tags=['eg'],
+        enabled=false
     )
 }}
 

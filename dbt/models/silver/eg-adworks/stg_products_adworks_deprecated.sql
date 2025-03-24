@@ -7,7 +7,8 @@
             'product_brand'
         ],
         on_schema_change='sync_all_columns',
-        tags=['eg']
+        tags=['eg'],
+        enabled=false
     )
 }}
 

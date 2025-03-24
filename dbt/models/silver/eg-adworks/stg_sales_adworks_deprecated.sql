@@ -3,15 +3,18 @@
         materialized='incremental',
         incremental_strategy='merge',
         unique_key=[
-            'return_date', 
+            'transaction_date', 
             'product_id', 
+            'customer_id', 
             'store_id'
         ],
         cluster_by=[
             'product_id', 
-            'store_id'
+            'customer_id'
         ],
-        on_schema_change='sync_all_columns'
+        on_schema_change='sync_all_columns',
+        tags=['sales_fact'],
+        enabled=false
     )
 }}
 
@@ -19,14 +22,14 @@ WITH source AS (
     SELECT
         *
     FROM 
-        {{ ref('raw_returns_adworks') }}
+        {{ ref('raw_sales_adworks') }}
     
     {% if is_incremental() %}
     WHERE
-        -- Use parsed return_date for incremental loads
-        PARSE_DATE('%m/%d/%Y', return_date) > (
+        -- Use parsed transaction_date for incremental loads
+        PARSE_DATE('%m/%d/%Y', transaction_date) > (
             SELECT 
-                MAX(return_date) 
+                MAX(transaction_date) 
             FROM 
                 {{ this }}
         )
@@ -36,10 +39,12 @@ WITH source AS (
 transformed_source AS (
     SELECT
         -- Parse and standardize dates
-        CAST(PARSE_DATE('%m/%d/%Y', return_date) AS DATE) AS return_date
+        CAST(PARSE_DATE('%m/%d/%Y', transaction_date) AS DATE) AS transaction_date
+        , CAST(PARSE_DATE('%m/%d/%Y', stock_date) AS DATE) AS stock_date
         
         -- Standardize IDs as integers
         , CAST(product_id AS INT64) AS product_id
+        , CAST(customer_id AS INT64) AS customer_id
         , CAST(store_id AS INT64) AS store_id
         , CAST(quantity AS INT64) AS quantity
         
@@ -48,8 +53,9 @@ transformed_source AS (
     FROM 
         source
     WHERE
-        return_date IS NOT NULL
+        transaction_date IS NOT NULL
         AND product_id IS NOT NULL
+        AND customer_id IS NOT NULL
         AND store_id IS NOT NULL
 )
 

@@ -2,7 +2,7 @@
     config(
         materialized='incremental',
         incremental_strategy='merge',
-        unique_key='region_key',
+        unique_key='product_key',
         on_schema_change='sync_all_columns',
         partition_by={
             "field": "_valid_from"
@@ -10,19 +10,19 @@
             , "granularity": "day"
         },
         cluster_by=[
-            'sales_district', 
-            'sales_region'
+            'product_brand'
         ],
-        tags=['eg']
+        tags=['eg'],
+        enabled=false
     )
 }}
 
 WITH source AS (
     SELECT
-        {{ dbt_utils.star(from=ref('snap_regions_adworks')) }}
+        {{ dbt_utils.star(from=ref('snap_products_adworks')) }}
         , (dbt_valid_to IS NULL) AS is_current
     FROM 
-        {{ ref('snap_regions_adworks') }}
+        {{ ref('snap_products_adworks') }}
     
     {% if is_incremental() %}
     WHERE
@@ -37,10 +37,10 @@ WITH source AS (
 final AS (
     SELECT
         {{ dbt_utils.generate_surrogate_key(
-            ['s.region_id', 's.dbt_valid_from']
-        ) }} AS region_key
+            ['s.product_id', 's.dbt_valid_from']
+        ) }} AS product_key
         , {{ dbt_utils.star(
-            from=ref('snap_regions_adworks'), 
+            from=ref('snap_products_adworks'), 
             relation_alias='s', 
             except=['dbt_valid_from', 'dbt_valid_to']
         ) }}

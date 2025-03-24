@@ -1,20 +1,21 @@
 {{
     config(
-        materialized='incremental'
-        , incremental_strategy='merge'
-        , unique_key='transaction_key'
-        , partition_by={
-            "field": "transaction_date"
-            , "data_type": "date"
-            , "granularity": "day"
-        }
-        , cluster_by=[
-            'product_id'
-            , 'customer_id'
-            , 'store_id'
-        ]
-        , on_schema_change='sync_all_columns'
-        , tags=['sales_fact']
+        materialized='incremental',
+        incremental_strategy='merge',
+        unique_key='transaction_key',
+        partition_by={
+            "field": "transaction_date",
+            "data_type": "date",
+            "granularity": "day"
+        },
+        cluster_by=[
+            'product_id',
+            'customer_id',
+            'store_id'
+        ],
+        on_schema_change='sync_all_columns',
+        tags=['sales_fact'],
+        enabled=false
     )
 }}
 
