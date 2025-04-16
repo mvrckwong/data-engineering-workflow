@@ -164,3 +164,7 @@ services:
       <<: *airflow-common-depends-on
       webserver:
         condition: service_healthy
+
+networks:
+  dbt-network:
+    driver: bridge
