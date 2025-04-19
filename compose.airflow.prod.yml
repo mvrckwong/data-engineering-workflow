@@ -17,10 +17,10 @@ x-airflow-common:
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_CONT_DIR}/dags
+    - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_CONT_DIR}/logs
+    - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_CONT_DIR}/config
+    - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_CONT_DIR}/plugins
     - /var/run/docker.sock:/var/run/docker.sock
   user: 
     "${AIRFLOW_UID:-50000}:0"
@@ -37,9 +37,9 @@ services:
   postgres:
     image: postgres:13
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
@@ -51,8 +51,6 @@ services:
 
   redis:
     image: redis:7.2-bookworm
-    expose:
-      - 6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -60,23 +58,29 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    # deploy:
+    #   resources:
+    #     limits: { cpus: '0.5', memory: 1G }
 
   webserver:
     <<: *airflow-common
     command: ["webserver"]
     ports:
-      - "8080:8080"
+      - "${PORT_AIRFLOW:-8881}:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 30s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
       init:
         condition: service_completed_successfully
+    # deploy:
+    #   resources:
+    #     limits: { cpus: '1.0', memory: 2G }
 
   scheduler:
     <<: *airflow-common
@@ -85,13 +89,16 @@ services:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 30s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
       init:
         condition: service_completed_successfully
+    # deploy:
+    #   resources:
+    #     limits: { cpus: '1.0', memory: 2G }
 
   worker:
     <<: *airflow-common
@@ -102,18 +109,19 @@ services:
         - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 30s
     environment:
       <<: *airflow-common-env
-      # Required to handle warm shutdown of the celery workers properly
-      # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
       init:
         condition: service_completed_successfully
+    # deploy:
+    #   resources:
+    #     limits: { cpus: '1.0', memory: 2G }
 
   trigger:
     <<: *airflow-common
@@ -122,18 +130,20 @@ services:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 30s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
       init:
         condition: service_completed_successfully
+    # deploy:
+    #   resources:
+    #     limits: { cpus: '1.0', memory: 2G }
 
   init:
     <<: *airflow-common
     entrypoint: /bin/bash
-    # yamllint disable rule:line-length
     command:
       - -c
       - |
@@ -182,7 +192,6 @@ services:
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
-    # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
@@ -200,30 +209,38 @@ services:
     environment:
       <<: *airflow-common-env
       CONNECTION_CHECK_MAX_COUNT: "0"
-    # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
     command:
       - bash
       - -c
       - airflow
+    # deploy:
+    #   resources:
+    #     limits: { cpus: '0.5', memory: 1G }
 
   flower:
     <<: *airflow-common
-    command: celery flower
+    command: ["celery", "flower"]
     profiles:
       - flower
     ports:
-      - "5555:5555"
+      - "${PORT_FLOWER:-5555}:5555"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 30s
     restart: always
-    depends_on:
-      <<: *airflow-common-depends-on
-      airflow-init:
-        condition: service_completed_successfully
+    # deploy:
+    #   resources:
+    #     limits: { cpus: '0.5', memory: 1G }
 
+
+# Define volume
 volumes:
   postgres-db-volume:
+
+# Define network
+networks:
+  airflow-network:
+    driver: bridge

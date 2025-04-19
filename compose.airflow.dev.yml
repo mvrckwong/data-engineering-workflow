@@ -1,0 +1,306 @@
+# Use Docker Compose V2 syntax if possible
+version: '3.8'
+
+# --- Secret Definitions ---
+# Defines secrets that will be sourced from local files.
+# These files MUST exist in './secrets/' relative to this compose file before starting.
+# secrets:
+#   postgres_password:
+#     file: ./secrets/postgres_password.txt # Contains only the PostgreSQL password
+#   fernet_key:
+#     file: ./secrets/fernet_key.txt      # Contains a securely generated Fernet key (for connection/variable encryption)
+#   airflow_webserver_password:
+#     file: ./secrets/airflow_webserver_password.txt # Contains the initial password for the default Airflow admin user
+
+# --- Common Airflow Configuration ---
+# Defines a reusable YAML anchor (&airflow-common) with settings shared across
+# Airflow services (webserver, scheduler, worker, triggerer, init) to reduce duplication.
+x-airflow-common:
+  &airflow-common
+  # Specifies the Docker image for Airflow components. Use a specific version tag for production.
+  # Consider building a custom image with baked-in dependencies/providers if needed.
+  image: apache/airflow:2.8.1
+  # Base environment variables shared across Airflow services.
+  # Configured for CeleryExecutor, using files for sensitive connection details.
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false' # Disable example DAGs in production
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true' # Best practice for production control
+    # Use secrets mounted as files for DB and Celery Result Backend connections
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN_FILE: /run/secrets/airflow_sql_alchemy_conn
+    AIRFLOW__CELERY__RESULT_BACKEND_FILE: /run/secrets/airflow_celery_result_backend
+    # Connection URL for the Redis message broker
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    # Use a secret mounted as a file for the Fernet key
+    AIRFLOW__CORE__FERNET_KEY_FILE: /run/secrets/fernet_key
+    # Authentication backend(s) for the API/UI
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.session'
+    # Enable scheduler health checks (used by healthcheck definition below)
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # Add other AIRFLOW__* configurations as needed for production tuning
+  # Defines common volume mounts.
+  # DAGs & Plugins: Mounted from the host in this example for simplicity. Consider Git-Sync or baking into image for more robust deployment.
+  # Logs: Handled via Docker logging drivers (configured externally or via 'logging:' directive), not host mounts.
+  # Config: Handled via environment variables primarily, not host mounts.
+  volumes:
+    - ./dags:/opt/airflow/dags:rw
+    - ./plugins:/opt/airflow/plugins:rw
+    # - /var/run/docker.sock:/var/run/docker.sock # REMOVED - Avoid unless absolutely necessary due to major security risks.
+  # Run Airflow processes as a non-root user for better security.
+  # AIRFLOW_UID should be set in the host environment (e.g., `export AIRFLOW_UID=$(id -u)`)
+  # This UID must have ownership/permissions for host-mounted ./dags and ./plugins.
+  user: "${AIRFLOW_UID:-50000}:0"
+  # Connect all Airflow services to the custom network for isolation.
+  networks:
+    - airflow-network
+  # Define common service dependencies: Airflow components depend on Redis and PostgreSQL being healthy.
+  depends_on:
+    &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  # Default restart policy for Airflow components: Restart if fails, but not on intentional stop.
+  restart: unless-stopped
+
+# --- Service Definitions ---
+services:
+  # PostgreSQL: The metadata database for Airflow.
+  # Stores DAG runs, task instances, connections, variables, etc.
+  # Also used as the Celery result backend in this configuration.
+  postgres:
+    image: postgres:13-alpine # Use a pinned, stable PostgreSQL version
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_DB: airflow
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password # Read password from the secret file
+    secrets:
+      - postgres_password # Make the secret available to the container
+    volumes:
+      # Mount a named volume for persistent database storage. BACK THIS UP REGULARLY!
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck: # Check if the database is ready to accept connections
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - airflow-network
+    restart: always # Critical service, should always try to restart
+    deploy: # Optional: Resource limits for the container
+      resources:
+        limits: { cpus: '1.0', memory: 2G }
+
+  # Redis: The message broker used by CeleryExecutor.
+  # Handles queuing of tasks distributed from the Scheduler to Workers.
+  redis:
+    image: redis:7.2-alpine # Use a pinned, stable Redis version
+    expose: # Expose port only to linked services within the Docker network
+      - 6379
+    healthcheck: # Check if Redis server is responsive
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 50 # More retries as it might start before Postgres is fully ready depending on host speed
+      start_period: 5s
+    networks:
+      - airflow-network
+    restart: always # Critical service, should always try to restart
+    deploy: # Optional: Resource limits
+      resources:
+        limits: { cpus: '0.5', memory: 1G }
+
+  # Initialization Service: A one-off container.
+  # Purpose: Prepare the environment *before* core Airflow components start.
+  #   1. Sets correct permissions on host-mounted volumes (dags, plugins, logs).
+  #   2. Runs Airflow database migrations (`airflow db upgrade`).
+  #   3. Creates the initial Airflow admin user using credentials from secrets/env vars.
+  init:
+    <<: *airflow-common # Inherit common Airflow settings
+    entrypoint: /bin/bash # Override default entrypoint for custom script
+    secrets: # Make necessary secrets available for initialization steps
+      - postgres_password # Needed indirectly to build connection strings below
+      - fernet_key
+      - airflow_sql_alchemy_conn # Full connection string secret
+      - airflow_celery_result_backend # Full connection string secret
+      - airflow_webserver_password # Initial admin password secret
+    # Custom command to perform initialization steps
+    command:
+      - -c
+      - |
+        # Temporarily export connection strings using the password for DB interactions within this script.
+        DB_PASSWORD=$$(cat /run/secrets/postgres_password)
+        export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="postgresql+psycopg2://airflow:$${DB_PASSWORD}@postgres/airflow"
+        export AIRFLOW__CELERY__RESULT_BACKEND="db+postgresql://airflow:$${DB_PASSWORD}@postgres/airflow"
+
+        # Create directories on host via bind mount & set ownership. Needs root privileges.
+        mkdir -p /sources/dags /sources/logs /sources/plugins
+        chown -R "${AIRFLOW_UID:-50000}:0" /sources/{dags,logs,plugins}
+
+        # Execute Airflow database migration and user creation commands.
+        airflow db upgrade
+        airflow users create \
+          --username "${_AIRFLOW_WWW_USER_USERNAME:-airflow}" \
+          --firstname "${_AIRFLOW_WWW_USER_FIRSTNAME:-Admin}" \
+          --lastname "${_AIRFLOW_WWW_USER_LASTNAME:-User}" \
+          --email "${_AIRFLOW_WWW_USER_EMAIL:-admin@example.com}" \
+          --role "${_AIRFLOW_WWW_USER_ROLE:-Admin}" \
+          --password "$$(cat /run/secrets/airflow_webserver_password)"
+    environment:
+      <<: *airflow-common-env # Inherit base env vars
+      # Prevent the standard Airflow entrypoint from running init steps automatically, as we do it manually above.
+      _AIRFLOW_DB_UPGRADE: 'false'
+      _AIRFLOW_CREATE_USER: 'false'
+      # Env vars to configure the initial user (can be overridden)
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD_FILE: /run/secrets/airflow_webserver_password # Tell 'users create' to use the secret file if password arg wasn't used
+    # Run this specific service as root to have permission for 'chown' on mounted volumes.
+    user: "0:0"
+    volumes:
+       # Mount host directories to a temporary path '/sources' inside this container
+       # specifically for the 'chown' command during initialization.
+       - ./dags:/sources/dags
+       - ./logs:/sources/logs # Mounted here just for chown, not for runtime logging
+       - ./plugins:/sources/plugins
+    networks:
+      - airflow-network
+    restart: "no" # This container should run once and exit successfully.
+
+  # Airflow Webserver: The UI component.
+  # Serves the Airflow web interface for monitoring and managing DAGs.
+  webserver:
+    <<: *airflow-common # Inherit common Airflow settings
+    command: ["webserver"] # Start the webserver process
+    ports:
+      # Map host port 8080 to container port 8080.
+      # Consider placing behind a reverse proxy (Nginx, Traefik) in production for TLS/HTTPS.
+      - "8080:8080"
+    secrets: # Make runtime secrets available
+      - fernet_key
+      - airflow_sql_alchemy_conn
+      - airflow_celery_result_backend
+    healthcheck: # Check if the webserver UI is responsive
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s; timeout: 10s; retries: 5; start_period: 30s
+    depends_on:
+      <<: *airflow-common-depends-on # Depends on DB/Redis
+      init: # Also depends on the init service completing successfully
+        condition: service_completed_successfully
+    deploy: # Optional: Resource limits
+      resources:
+        limits: { cpus: '1.0', memory: 2G }
+
+  # Airflow Scheduler: The core orchestrating component.
+  # Monitors DAGs, schedules tasks, and sends tasks to the Celery queue.
+  scheduler:
+    <<: *airflow-common # Inherit common Airflow settings
+    command: ["scheduler"] # Start the scheduler process
+    secrets: # Make runtime secrets available
+      - fernet_key
+      - airflow_sql_alchemy_conn
+      - airflow_celery_result_backend
+    healthcheck: # Check the scheduler's dedicated health endpoint (requires AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true)
+      test: ["CMD", "curl", "--fail", "http://localhost:8793/health"] # Default port is 8793
+      interval: 30s; timeout: 10s; retries: 5; start_period: 30s
+    depends_on:
+      <<: *airflow-common-depends-on # Depends on DB/Redis
+      init: # Also depends on the init service completing successfully
+        condition: service_completed_successfully
+    deploy: # Optional: Resource limits (often needs more CPU/Memory than webserver)
+      resources:
+        limits: { cpus: '1.0', memory: 2G }
+
+  # Airflow Worker: Executes the tasks assigned via the Celery queue.
+  # Can be scaled horizontally for increased task throughput.
+  worker:
+    <<: *airflow-common # Inherit common Airflow settings
+    command: ["celery", "worker"] # Start a Celery worker process
+    secrets: # Make runtime secrets available
+      - fernet_key
+      - airflow_sql_alchemy_conn
+      - airflow_celery_result_backend
+    healthcheck: # Check if the Celery worker process is alive and responding
+      test: ["CMD-SHELL", 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"']
+      interval: 30s; timeout: 10s; retries: 5; start_period: 30s
+    environment:
+      <<: *airflow-common-env # Inherit base env vars
+      # Required for containers using Celery Executor for proper signal handling.
+      DUMB_INIT_SETSID: "0"
+    depends_on:
+      <<: *airflow-common-depends-on # Depends on DB/Redis
+      init: # Also depends on the init service completing successfully
+        condition: service_completed_successfully
+    deploy: # Optional: Resource limits (adjust based on typical task requirements)
+      resources:
+        limits: { cpus: '1.0', memory: 2G }
+      # Scaling: Use `docker compose up --scale worker=N` to run N worker containers.
+
+  # Airflow Triggerer: Handles "deferred" operators.
+  # Runs lightweight, long-running tasks that wait for external systems.
+  triggerer:
+    <<: *airflow-common # Inherit common Airflow settings
+    command: ["triggerer"] # Start the triggerer process
+    secrets: # Make runtime secrets available
+      - fernet_key
+      - airflow_sql_alchemy_conn
+      - airflow_celery_result_backend
+    healthcheck: # Check if the triggerer job is running
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 30s; timeout: 10s; retries: 5; start_period: 30s
+    depends_on:
+      <<: *airflow-common-depends-on # Depends on DB/Redis
+      init: # Also depends on the init service completing successfully
+        condition: service_completed_successfully
+    deploy: # Optional: Resource limits (usually less demanding)
+      resources:
+        limits: { cpus: '0.5', memory: 1G }
+
+  # Flower: Optional Web UI for monitoring Celery tasks and workers.
+  # Useful for debugging and observing queue activity. Access via http://<host>:5555.
+  # flower:
+  #   <<: *airflow-common
+  #   command: ["celery", "flower"]
+  #   ports:
+  #     - "5555:5555" # Secure access to this port in production (e.g., firewall, VPN, reverse proxy auth)
+  #   healthcheck:
+  #     test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+  #     interval: 30s; timeout: 10s; retries: 5; start_period: 30s
+  #   depends_on:
+  #     <<: *airflow-common-depends-on
+  #     init:
+  #       condition: service_completed_successfully
+  #   deploy:
+  #     resources:
+  #       limits: { cpus: '0.5', memory: 512M }
+
+# --- Named Volume Definition ---
+volumes:
+  # Defines the named volume used by PostgreSQL for data persistence.
+  # Ensures DB data survives container restarts/recreations.
+  # CRITICAL: Implement a robust backup strategy for this volume in production.
+  postgres-db-volume:
+
+# --- Custom Network Definition ---
+networks:
+  # Defines a custom bridge network for all services in this Compose file.
+  # Provides better isolation and allows services to resolve each other by service name.
+  airflow-network:
+    driver: bridge
+
+# --- Composite Secret Definitions ---
+# Defines secrets that represent full connection strings, necessary for Airflow's *_FILE env vars.
+# These files need to be created manually *before* deployment, typically by combining static
+# connection info (user, host, db name) with the password read from the 'postgres_password' secret file.
+# Example script commands to create these files are shown below.
+# secrets:
+#   # Secret for the full SQLAlchemy connection string.
+#   # Example creation: echo "postgresql+psycopg2://airflow:$(cat ./secrets/postgres_password.txt)@postgres/airflow" > ./secrets/airflow_sql_alchemy_conn.txt
+#   airflow_sql_alchemy_conn:
+#     file: ./secrets/airflow_sql_alchemy_conn.txt
+
+#   # Secret for the full Celery Result Backend connection string.
+#   # Example creation: echo "db+postgresql://airflow:$(cat ./secrets/postgres_password.txt)@postgres/airflow" > ./secrets/airflow_celery_result_backend.txt
+#   airflow_celery_result_backend:
+#     file: ./secrets/airflow_celery_result_backend.txt
