@@ -11,3 +11,4 @@ deploy_airflow:
 deploy_airflow_debug:
 	docker compose -f compose.airflow.yml down
 	docker compose -f compose.airflow.yml up -d --build --profile flower,debug
+	
