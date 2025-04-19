@@ -1,12 +1,8 @@
 # Custom
-dbt_packages/
-package-lock.yml
 logs/
-seeds/
-data/seeds
 *ipynb
-bq-keyfile.json
-.user.yml
+airflow_fernet_key.txt
+airflow_postgres_pw.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
