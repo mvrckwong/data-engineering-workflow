@@ -24,6 +24,9 @@ x-airflow-common:
     - /var/run/docker.sock:/var/run/docker.sock
   user: 
     "${AIRFLOW_UID:-50000}:0"
+  networks:
+    - airflow-network
+    - shared-dbt-airflow-network
   depends_on:
     &airflow-common-depends-on
     redis:
@@ -244,3 +247,6 @@ volumes:
 networks:
   airflow-network:
     driver: bridge
+  shared-dbt-airflow-network:
+    external: true
+    name: shared-dbt-airflow-network
