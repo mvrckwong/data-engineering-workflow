@@ -1,4 +1,4 @@
-name: airflow-instance-prod
+name: general-airflow-prod
 
 x-airflow-common:
   &airflow-common
@@ -21,7 +21,6 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_CONT_DIR}/logs
     - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_CONT_DIR}/config
     - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_CONT_DIR}/plugins
-    - /var/run/docker.sock:/var/run/docker.sock
   user: 
     "${AIRFLOW_UID:-50000}:0"
   networks:
