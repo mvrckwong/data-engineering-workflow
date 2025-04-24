@@ -31,6 +31,12 @@ x-airflow-common:
         AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_KEY}
         AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
 
+        # Optional: Statsd settings for monitoring
+        AIRFLOW__METRICS__STATSD_ON: 'True'
+        AIRFLOW__METRICS__STATSD_HOST: 'statsd-exporter'
+        AIRFLOW__METRICS__STATSD_PORT: '8125'
+        AIRFLOW__METRICS__STATSD_PREFIX: 'airflow'
+
         # Optional: Add other production configurations like logging, remote task handlers, etc.
         # AIRFLOW__LOGGING__REMOTE_LOGGING: 'true'
         # AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: 's3://my-airflow-logs-bucket/logs'
@@ -236,6 +242,16 @@ services:
         restart: "no"
         volumes:
             - ${AIRFLOW_PROJ_DIR}:/sources
+    
+    statsd-exporter:
+        image: prom/statsd-exporter:v0.26.1
+        command:
+            - '--statsd.listen-udp=:8125'
+            - '--web.listen-address=:9102'
+        restart: always
+        networks:
+            - airflow-network
+            - monitoring-network
 
     cli:
         <<: *airflow-common
@@ -278,6 +294,8 @@ networks:
     shared-dbt-airflow-network:
         external: true
         name: shared-dbt-airflow-network
+    monitoring-network:
+        external: true
 
 # Define named volumes
 volumes:
