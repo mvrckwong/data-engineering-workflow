@@ -1,3 +1,5 @@
+# generate_airflow_key.py
+
 import argparse
 import sys
 from typing import List
@@ -5,6 +7,7 @@ from typing import List
 from cryptography.fernet import Fernet
 from loguru import logger
 
+# Configure logging to output to stderr
 logger.remove()
 logger.add(sys.stderr, level="INFO")
 
@@ -13,16 +16,16 @@ def generate_fernet_key() -> str:
     Generates a cryptographically secure Fernet key.
 
     Returns:
-        str: The generated Fernet key, base64-encoded.
+        str: The generated Fernet key, base64-encoded as a string.
     """
     key_bytes = Fernet.generate_key()
-    # Decode bytes to string for easier handling/display
+    # Decode bytes to string for easier handling/display and use in config files
     return key_bytes.decode('utf-8')
 
 def main():
     """Handles command-line arguments for generating Fernet keys."""
     parser = argparse.ArgumentParser(
-        description="Generate one or more secure Fernet keys.",
+        description="Generate one or more secure Fernet keys suitable for Airflow.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
@@ -37,7 +40,9 @@ def main():
 
     if args.number < 1:
         logger.error("Number of keys must be at least 1.")
+        # Use parser.error to exit cleanly with usage message
         parser.error("Number of keys must be at least 1.")
+        # return is redundant after parser.error() but kept for clarity if error handling changes
         return
 
     logger.info(f"Generating {args.number} Fernet Key(s)...")
@@ -46,15 +51,15 @@ def main():
         try:
             fernet_key = generate_fernet_key()
             generated_keys.append(fernet_key)
-            # Log each key as it's generated
+            # Log each key successfully generated
             logger.success(f"Key {i+1}: {fernet_key}")
         except Exception as e:
             # Catching generic Exception as Fernet generation is usually robust
             logger.error(f"Error generating key {i+1}: {e}")
-            break # Stop generation if an error occurs
+            # Stop generation if an error occurs to avoid partial results without notice
+            break
 
-    # Optional: Could log all keys again at the end if needed,
-    # but logging them individually above might be sufficient.
+    # Give a final status update
     if len(generated_keys) == args.number:
         logger.info("Generation complete.")
     else:
