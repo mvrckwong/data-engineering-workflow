@@ -47,7 +47,7 @@ x-airflow-common:
         - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_CONT_DIR}/dags:rw
         - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_CONT_DIR}/config:rw
         - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_CONT_DIR}/plugins:rw
-        - ./logs:${AIRFLOW_CONT_DIR}/logs:rw
+        - ${AIRFLOW_SERVICE_DIR}/logs:${AIRFLOW_CONT_DIR}/logs:rw
     user: 
         "${AIRFLOW_UID}:0"
     depends_on:
@@ -60,7 +60,7 @@ x-airflow-common:
         - .env
     networks:
         - airflow-network
-        - shared-dbt-airflow-network
+        - shared-airflow-network
 
 services:
     postgres:
@@ -71,16 +71,18 @@ services:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
             POSTGRES_DB: ${POSTGRES_DB}
+            PGDATA: /var/lib/postgresql/data/pgdata
         volumes:
-            - postgres-db-volume:/var/lib/postgresql/data
+          - postgres-db-volume:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD", "pg_isready", "-U", "airflow"]
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
             interval: 10s
             retries: 10
             start_period: 5s
         restart: always
         networks:
             - airflow-network
+            - shared-db-network
 
     redis:
         image: redis:7.2-bookworm
@@ -292,13 +294,13 @@ networks:
         driver: bridge
         name: airflow-internal-network
     shared-airflow-network:
-        external: true
+        driver: bridge
         name: shared-airflow-network
     shared-db-network:
-        external: true
+        driver: bridge
         name: shared-db-network
     monitoring-network:
-        external: true
+        driver: bridge
         name: monitoring-network
 
 # Define named volumes

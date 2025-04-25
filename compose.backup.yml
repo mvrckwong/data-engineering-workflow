@@ -1,0 +1,28 @@
+# docker-compose.backup.yml (References the network as external)
+
+version: '3.8'
+
+# Reference the network created by the main docker-compose.yml
+# It MUST be marked external here.
+networks:
+  shared-db-network:
+    external: true
+    name: shared-db-network # Must match the name defined in the main file
+
+services:
+  postgres-backup:
+    image: postgres:13
+    container_name: postgres_backup_job
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: postgres # Service name from main compose file
+      BACKUP_FILENAME: backup_$(date +%Y%m%d_%H%M%S).dump
+    volumes:
+      - ./db_backups:/backups
+    networks:
+      # Connect the backup service to the same network
+      - shared-db-network
+    command: >
+      sh -c "pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc -f /backups/$$BACKUP_FILENAME"
