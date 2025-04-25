@@ -15,3 +15,16 @@ deploy_airflow_debug:
 	docker compose -f compose.airflow.prod.yml --profile debug down
 	docker compose -f compose.airflow.prod.yml --profile debug up -d --build --remove-orphans --force-recreate
 	@echo "Airflow deployed in debug mode"
+
+generate_fernet_key:
+	uv run --group scripts python scripts/generate_fernet_key.py
+	@echo "Fernet key generated"
+
+create_docker_network:
+	docker network create shared-airflow-network
+	docker network create shared-db-network
+	@echo "Docker network created"
+
+test_checkpoint:
+	docker compose -f compose.checkpoint.yml up -d --build --remove-orphans --force-recreate
+	@echo "Checkpoint test deployed"
