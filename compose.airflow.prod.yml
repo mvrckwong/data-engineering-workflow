@@ -32,7 +32,7 @@ x-airflow-common:
         AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
 
         # Optional: Statsd settings for monitoring
-        AIRFLOW__METRICS__STATSD_ON: 'True'
+        AIRFLOW__METRICS__STATSD_ON: 'true'
         AIRFLOW__METRICS__STATSD_HOST: 'statsd-exporter'
         AIRFLOW__METRICS__STATSD_PORT: '8125'
         AIRFLOW__METRICS__STATSD_PREFIX: 'airflow'
