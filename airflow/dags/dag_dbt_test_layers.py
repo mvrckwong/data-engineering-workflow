@@ -20,7 +20,7 @@ with DAG(
     # dates and times
     start_date=current_dag_config.get('start_date'),
     end_date=current_dag_config.get('end_date'),
-    schedule_interval=current_dag_config.get('schedule_interval'),
+    #schedule_interval=current_dag_config.get('schedule_interval'),
     
     # documentation
     doc_md=current_dag_config.get('doc_md'),
@@ -53,7 +53,7 @@ with DAG(
     # dates and times
     start_date=current_dag_config.get('start_date'),
     end_date=current_dag_config.get('end_date'),
-    schedule_interval=current_dag_config.get('schedule_interval'),
+    #schedule_interval=current_dag_config.get('schedule_interval'),
     
     # documentation
     doc_md=current_dag_config.get('doc_md'),
@@ -86,7 +86,7 @@ with DAG(
     # dates and times
     start_date=current_dag_config.get('start_date'),
     end_date=current_dag_config.get('end_date'),
-    schedule_interval=current_dag_config.get('schedule_interval'),
+    #schedule_interval=current_dag_config.get('schedule_interval'),
     
     # documentation
     doc_md=current_dag_config.get('doc_md'),

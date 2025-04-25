@@ -1,12 +1,32 @@
-# Getting the base image.
-FROM apache/airflow:2.10.5
+# Define the base image
+ARG AIRFLOW_VERSION=3.0.0
+FROM apache/airflow:${AIRFLOW_VERSION}
 
-# Switch to the new user
+# Labeling
+LABEL maintainer="mvrck.wong@gmail.com"
+LABEL description="Custom Airflow image"
+
+# Add any required packages here.
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    # Add system packages needed by your Python dependencies here. Examples:
+    # build-essential \
+    # libpq-dev \
+    # freetds-dev \
+    # libkrb5-dev \
+    # libsasl2-dev \
+    # libssl-dev \
+    # default-libmysqlclient-dev \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copying the requirements file *before* installing ensures Docker caches this layer
+# Use --chown to set the correct owner immediately, avoiding permission issues.
+COPY --chown=airflow:airflow requirements.txt /opt/requirements.txt
+
+# Switch back to the airflow user
 USER airflow
 
-# Copying the requirements.
-COPY requirements.txt /opt/requirements.txt
-
-# Upgrade to the latest pip and install python dependencies.
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /opt/requirements.txt
+# Install python dependencies
+RUN pip install --no-cache-dir -r /opt/requirements.txt

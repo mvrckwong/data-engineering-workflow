@@ -1,9 +1,12 @@
 [project]
 name = "data-engineering-workflow"
 version = "0.1.0"
-description = "Add your description here"
+description = "Data engineering workflow that focus on connecting data sources, transforming data, and loading it into a data warehouse."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "dbt-bigquery>=1.9.1"
+    "pandas>=2.2.3",
 ]
+
+[tool.uv.workspace]
+members = ["scripts"]
