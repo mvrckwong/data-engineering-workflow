@@ -30,6 +30,7 @@ x-airflow-common:
         # Webserver Settings (Using variables from .env)
         AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_KEY}
         AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
+        AIRFLOW__WEBSERVER__RATELIMIT_STORAGE_URI: "redis://:${REDIS_PASSWORD}@redis:6379/1"
 
         # Optional: Statsd settings for monitoring
         AIRFLOW__METRICS__STATSD_ON: 'true'
@@ -262,7 +263,6 @@ services:
             CONNECTION_CHECK_MAX_COUNT: "0"
         command: 
             ["bash", "-c", "airflow"]
-        restart: unless-stopped
         depends_on:
             <<: *airflow-common-depends-on
 
