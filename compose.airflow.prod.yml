@@ -66,7 +66,7 @@ services:
     postgres:
         image: postgres:13
         ports:
-            - "${PORT_POSTGRES}:5432"
+            - "${LOCAL_HOST}:${PORT_POSTGRES}:5432"
         environment:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -104,7 +104,7 @@ services:
         <<: *airflow-common
         command: ["api-server"]
         ports:
-            - "${PORT_AIRFLOW}:8080"
+            - "${LOCAL_HOST}:${PORT_AIRFLOW}:8080"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
             interval: 30s
@@ -275,7 +275,7 @@ services:
         profiles:
             - debug
         ports:
-            - "${PORT_FLOWER}:5555"
+            - "${LOCAL_HOST}:${PORT_FLOWER}:5555"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:${PORT_FLOWER}/"]
             interval: 30s

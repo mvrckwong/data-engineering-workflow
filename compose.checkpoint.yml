@@ -1,0 +1,25 @@
+name: general-checkpoint
+
+services:
+  postgres-backup:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Used by pg_dump via PGPASSWORD
+      PGPASSWORD: ${POSTGRES_PASSWORD}          # <--- ADD THIS LINE
+      POSTGRES_DB: ${POSTGRES_DB}             # Used in pg_dump command and filename
+      POSTGRES_HOST: postgres                # <--- CORRECTED: Use the service name
+    volumes:
+      - ${AIRFLOW_SERVICE_DIR}/backups:/backups
+    networks:
+      - shared-db-network
+    command: >
+      sh -c "pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc -f /backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump"
+    env_file:
+      - .env
+
+
+networks:
+  shared-db-network:
+    external: true
+    name: shared-db-network
