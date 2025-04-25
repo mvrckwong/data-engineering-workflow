@@ -291,11 +291,15 @@ networks:
     airflow-network:
         driver: bridge
         name: airflow-internal-network
-    shared-dbt-airflow-network:
+    shared-airflow-network:
         external: true
-        name: shared-dbt-airflow-network
+        name: shared-airflow-network
+    shared-db-network:
+        external: true
+        name: shared-db-network
     monitoring-network:
         external: true
+        name: monitoring-network
 
 # Define named volumes
 volumes:
