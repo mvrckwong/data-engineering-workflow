@@ -1,8 +1,7 @@
 # Custom
 logs/
-*ipynb
-airflow_fernet_key.txt
-airflow_postgres_pw.txt
+*.ipynb
+*.dump
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

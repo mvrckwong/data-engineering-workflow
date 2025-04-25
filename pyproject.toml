@@ -4,9 +4,24 @@ version = "0.1.0"
 description = "Data engineering workflow that focus on connecting data sources, transforming data, and loading it into a data warehouse."
 readme = "README.md"
 requires-python = ">=3.11"
+
+# Core Docker Dependencies
+# These dependencies are required for the core functionality of the package.
 dependencies = [
     "pandas>=2.2.3",
+    "python-dotenv>=1.1.0",
 ]
 
-[tool.uv.workspace]
-members = ["scripts"]
+# Optional Dependencies
+# These dependencies are optional and can be installed based on the user's needs.
+[dependency-groups]
+scripts = [
+    "cryptography>=44.0.2",
+    "loguru>=0.7.3",
+]
+tests = [
+    "loguru>=0.7.3",
+]
+dev = [
+    "loguru>=0.7.3",
+]

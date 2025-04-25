@@ -30,6 +30,7 @@ x-airflow-common:
         # Webserver Settings (Using variables from .env)
         AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_KEY}
         AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
+        AIRFLOW__WEBSERVER__RATELIMIT_STORAGE_URI: "redis://:${REDIS_PASSWORD}@redis:6379/1"
 
         # Optional: Statsd settings for monitoring
         AIRFLOW__METRICS__STATSD_ON: 'true'
@@ -44,9 +45,9 @@ x-airflow-common:
 
     volumes:
         - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_CONT_DIR}/dags:rw
-        - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_CONT_DIR}/logs:rw
         - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_CONT_DIR}/config:rw
         - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_CONT_DIR}/plugins:rw
+        - ${AIRFLOW_SERVICE_DIR}/logs:${AIRFLOW_CONT_DIR}/logs:rw
     user: 
         "${AIRFLOW_UID}:0"
     depends_on:
@@ -59,27 +60,29 @@ x-airflow-common:
         - .env
     networks:
         - airflow-network
-        - shared-dbt-airflow-network
+        - shared-airflow-network
 
 services:
     postgres:
         image: postgres:13
         ports:
-            - "${PORT_POSTGRES}:5432"
+            - "${LOCAL_HOST}:${PORT_POSTGRES}:5432"
         environment:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
             POSTGRES_DB: ${POSTGRES_DB}
+            PGDATA: /var/lib/postgresql/data/pgdata
         volumes:
-            - postgres-db-volume:/var/lib/postgresql/data
+          - postgres-db-volume:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD", "pg_isready", "-U", "airflow"]
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
             interval: 10s
             retries: 10
             start_period: 5s
         restart: always
         networks:
             - airflow-network
+            - shared-db-network
 
     redis:
         image: redis:7.2-bookworm
@@ -101,7 +104,7 @@ services:
         <<: *airflow-common
         command: ["api-server"]
         ports:
-            - "${PORT_AIRFLOW}:8080"
+            - "${LOCAL_HOST}:${PORT_AIRFLOW}:8080"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
             interval: 30s
@@ -262,7 +265,6 @@ services:
             CONNECTION_CHECK_MAX_COUNT: "0"
         command: 
             ["bash", "-c", "airflow"]
-        restart: unless-stopped
         depends_on:
             <<: *airflow-common-depends-on
 
@@ -273,7 +275,7 @@ services:
         profiles:
             - debug
         ports:
-            - "${PORT_FLOWER}:5555"
+            - "${LOCAL_HOST}:${PORT_FLOWER}:5555"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:${PORT_FLOWER}/"]
             interval: 30s
@@ -291,11 +293,15 @@ networks:
     airflow-network:
         driver: bridge
         name: airflow-internal-network
-    shared-dbt-airflow-network:
-        external: true
-        name: shared-dbt-airflow-network
+    shared-airflow-network:
+        driver: bridge
+        name: shared-airflow-network
+    shared-db-network:
+        driver: bridge
+        name: shared-db-network
     monitoring-network:
-        external: true
+        driver: bridge
+        name: monitoring-network
 
 # Define named volumes
 volumes:
