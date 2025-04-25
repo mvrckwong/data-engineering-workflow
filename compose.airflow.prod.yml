@@ -44,9 +44,9 @@ x-airflow-common:
 
     volumes:
         - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_CONT_DIR}/dags:rw
-        - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_CONT_DIR}/logs:rw
         - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_CONT_DIR}/config:rw
         - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_CONT_DIR}/plugins:rw
+        - ./logs:${AIRFLOW_CONT_DIR}/logs:rw
     user: 
         "${AIRFLOW_UID}:0"
     depends_on:
