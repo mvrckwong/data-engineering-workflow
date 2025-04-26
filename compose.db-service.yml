@@ -46,7 +46,6 @@ services:
       - "sh"
       - "-c"
       - "pg_restore -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB --clean --if-exists /backups/$$1"
-    tty: true
 
 networks:
   shared-db-network:
