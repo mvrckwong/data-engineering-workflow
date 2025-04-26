@@ -3,6 +3,7 @@ name: db-services
 x-postgres-common:
   &postgres-common
   image: postgres:13
+  user: "${POSTGRES_TARGET_UID}:${POSTGRES_TARGET_GID}"
   environment:
     POSTGRES_USER: ${POSTGRES_USER}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -12,8 +13,8 @@ x-postgres-common:
   env_file:
     - .env
   volumes:
-    - ${POSTGRES_SERVICE_DIR:-.}/backups:/backups
-    - ${POSTGRES_SERVICE_DIR:-.}/logs:/logs 
+    - ${POSTGRES_SERVICE_DIR}/backups:${POSTGRES_CONT_DIR}/backups:rw
+    - ${POSTGRES_SERVICE_DIR}/logs:${POSTGRES_CONT_DIR}/logs:rw
   networks:
     - shared-db-network
 
