@@ -26,6 +26,6 @@ create_docker_network:
 	@echo "Docker network created"
 
 create_db_backup:
-	docker compose -f compose.backup.yml down
-	docker compose -f compose.backup.yml up -d --build --remove-orphans --force-recreate
+	docker compose -f compose.checkpoint.yml down
+	docker compose -f compose.checkpoint.yml up -d --build --remove-orphans --force-recreate
 	@echo "DB Backup deployed"
