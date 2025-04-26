@@ -1,4 +1,4 @@
-name: general-checkpoint
+name: backup
 
 services:
   postgres-backup:
