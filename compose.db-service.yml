@@ -1,80 +1,36 @@
-# Filename: docker-compose.yml (or similar)
 name: db-services
 
 x-postgres-common:
   &postgres-common
   image: postgres:13
-  # Runs the container processes as the specified host user/group ID. 
-  # Ensure the host directories mapped in volumes have correct permissions for this user/group.
   user: "${POSTGRES_TARGET_UID}:${POSTGRES_TARGET_GID}" 
   environment:
     POSTGRES_USER: ${POSTGRES_USER}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     POSTGRES_DB: ${POSTGRES_DB}
-    # This HOST should likely point to your actual running postgres instance if it's separate.
-    # If you intend this backup container to connect to *another* postgres container named 'postgres'
-    # on the 'shared-db-network', this is correct. Otherwise, adjust as needed.
     POSTGRES_HOST: postgres 
-    PGPASSWORD: ${POSTGRES_PASSWORD} # Used by psql, pg_dump, etc.
+    PGPASSWORD: ${POSTGRES_PASSWORD}
   env_file:
-    # Loads environment variables from a .env file in the same directory
     - .env
   volumes:
-    # Maps host directory for backups to the container directory specified by POSTGRES_CONT_DIR
     - ${POSTGRES_SERVICE_DIR}/backups:${POSTGRES_CONT_DIR}/backups:rw 
-    # Maps host directory for logs to the container directory specified by POSTGRES_CONT_DIR
-    - ${POSTGRES_SERVICE_DIR}/logs:${POSTGRES_CONT_DIR}/logs:rw 
   networks:
     - shared-db-network
 
 services:
   postgres-backup:
     <<: *postgres-common
-    # This service runs on 'docker compose up' unless profiled out
     command:
       - "sh"
       - "-c"
-      - |
-        # Ensure the target directory exists inside the container based on the volume mount
-        mkdir -p $$POSTGRES_CONT_DIR/backups
-
-        echo "Starting backup..."
-        # Use the correct container path variable for the output file
-        pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc -f $$POSTGRES_CONT_DIR/backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump
-        
-        BACKUP_EXIT_CODE=$$? # Capture exit code of pg_dump
-        if [ $$BACKUP_EXIT_CODE -eq 0 ]; then
-          echo "Backup successful. Keeping container alive..."
-        else
-          echo "Backup failed with exit code $$BACKUP_EXIT_CODE. Keeping container alive for inspection..."
-        fi
-        # Keep the container running so logs can be checked, or for cronjob-like setups using external schedulers.
-        sleep infinity
-
-  postgres-restore:
+      - pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc -f $$POSTGRES_CONT_DIR/backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump
+  
+  postgres-cli:
     <<: *postgres-common
-    profiles:
-      # This service only runs when specifically requested, e.g., 'docker compose --profile restore run ...'
-      - restore 
-    # Restores the specified dump file from the container's backup directory.
-    # Usage: docker compose run --rm postgres-restore <backup_filename.dump>
-    # e.g.: docker compose run --rm postgres-restore 20250426-mydatabase.dump 
-    # Note: The filename is relative to the *container's* backup path.
-    command:
-      - "sh"
-      - "-c"
-      - |
-        echo "Attempting to restore $$1 from $$POSTGRES_CONT_DIR/backups/ ..."
-        # Use the correct container path variable to find the backup file
-        pg_restore -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB --clean --if-exists $$POSTGRES_CONT_DIR/backups/$$1
-        RESTORE_EXIT_CODE=$$?
-        if [ $$RESTORE_EXIT_CODE -eq 0 ]; then
-          echo "Restore successful for $$1."
-        else
-          echo "Restore failed with exit code $$RESTORE_EXIT_CODE for $$1."
-          # Exit with the same code so 'docker compose run' reflects the failure
-          exit $$RESTORE_EXIT_CODE 
-        fi
+    tty: true
+    depends_on:
+      postgres-backup:
+        condition: service_completed_successfully
 
 networks:
   shared-db-network:
