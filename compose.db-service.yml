@@ -8,26 +8,37 @@ x-postgres-common:
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     POSTGRES_DB: ${POSTGRES_DB}
     POSTGRES_HOST: postgres
-
     PGPASSWORD: ${POSTGRES_PASSWORD}
   env_file:
     - .env
   volumes:
-    - ${AIRFLOW_SERVICE_DIR}/backups:/backups
+    - ${POSTGRES_SERVICE_DIR:-.}/backups:/backups
+    - ${POSTGRES_SERVICE_DIR:-.}/logs:/logs 
   networks:
     - shared-db-network
 
 services:
   postgres-backup:
     <<: *postgres-common
-    restart: "no"
     command:
       - "sh"
       - "-c"
-      - "pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc -f /backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump"
+      - |
+        echo "Starting backup..."
+        pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc -f /backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump
+        BACKUP_EXIT_CODE=$$? # Capture exit code of pg_dump
+        if [ $$BACKUP_EXIT_CODE -eq 0 ]; then
+          echo "Backup successful. Keeping container alive..."
+        else
+          echo "Backup failed with exit code $$BACKUP_EXIT_CODE. Keeping container alive for inspection..."
+        fi
+        # Keep the container running indefinitely
+        sleep infinity
 
   postgres-restore:
     <<: *postgres-common
+    profiles:
+      - restore
     # Restores the specified dump file from the /backups directory.
     # Usage: docker compose -f compose.db-service.yml run --rm postgres-restore <backup_filename.dump>
     # e.g.: docker compose -f compose.db-service.yml run --rm postgres-restore 20250426-mydatabase.dump
