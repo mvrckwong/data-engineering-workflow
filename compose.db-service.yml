@@ -10,6 +10,8 @@ x-postgres-common:
     POSTGRES_DB: ${POSTGRES_DB}
     POSTGRES_HOST: postgres 
     PGPASSWORD: ${POSTGRES_PASSWORD}
+
+    RESTORE_FILE: ${RESTORE_FILE}
   env_file:
     - .env
   volumes:
@@ -20,18 +22,31 @@ x-postgres-common:
 services:
   postgres-backup:
     <<: *postgres-common
-    command:
+    restart: no
+    command: # docker compose -f compose.db-service.yml run --rm postgres-backup
       - "sh"
       - "-c"
       - > 
         pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc 
         -f $$POSTGRES_CONT_DIR/backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump
+  postgres-restore:
+    <<: *postgres-common
+    restart: "no" # Run once and exit
+    command: # docker compose -f compose.db-service.yml run --rm postgres-restore
+      - "sh"
+      - "-c"
+      - >
+        echo "Attempting to restore $$POSTGRES_DB from $$POSTGRES_CONT_DIR/backups/$$RESTORE_FILE..." &&
+        pg_restore -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB \
+                   --clean --if-exists --verbose \
+                   "$$POSTGRES_CONT_DIR/backups/$$RESTORE_FILE" &&
+        echo "Restore finished." || echo "Restore failed."
   
   postgres-cli:
     <<: *postgres-common
-    profiles:
-      - debug
-    user: root
+    # profiles:
+    #   - debug
+    # user: root
     restart: no
     tty: true
     depends_on:
