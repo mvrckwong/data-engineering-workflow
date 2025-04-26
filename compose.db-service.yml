@@ -23,10 +23,16 @@ services:
     command:
       - "sh"
       - "-c"
-      - pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc -f $$POSTGRES_CONT_DIR/backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump
+      - > 
+        pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc 
+        -f $$POSTGRES_CONT_DIR/backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump
   
   postgres-cli:
     <<: *postgres-common
+    profiles:
+      - debug
+    user: root
+    restart: no
     tty: true
     depends_on:
       postgres-backup:
