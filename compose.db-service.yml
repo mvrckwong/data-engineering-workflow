@@ -1,4 +1,4 @@
-name: checkpoint
+name: db-services
 
 x-postgres-common:
   &postgres-common
@@ -6,9 +6,10 @@ x-postgres-common:
   environment:
     POSTGRES_USER: ${POSTGRES_USER}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    PGPASSWORD: ${POSTGRES_PASSWORD}
     POSTGRES_DB: ${POSTGRES_DB}
     POSTGRES_HOST: postgres
+
+    PGPASSWORD: ${POSTGRES_PASSWORD}
   env_file:
     - .env
   volumes:
@@ -19,6 +20,7 @@ x-postgres-common:
 services:
   postgres-backup:
     <<: *postgres-common
+    restart: "no"
     command:
       - "sh"
       - "-c"
@@ -26,8 +28,14 @@ services:
 
   postgres-restore:
     <<: *postgres-common
+    # Restores the specified dump file from the /backups directory.
+    # Usage: docker compose -f compose.db-service.yml run --rm postgres-restore <backup_filename.dump>
+    # e.g.: docker compose -f compose.db-service.yml run --rm postgres-restore 20250426-mydatabase.dump
+    command:
+      - "sh"
+      - "-c"
+      - "pg_restore -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB --clean --if-exists /backups/$$1"
     tty: true
-    
 
 networks:
   shared-db-network:
