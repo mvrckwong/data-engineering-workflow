@@ -5,10 +5,10 @@ services:
     image: postgres:13
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Used by pg_dump via PGPASSWORD
-      PGPASSWORD: ${POSTGRES_PASSWORD}          # <--- ADD THIS LINE
-      POSTGRES_DB: ${POSTGRES_DB}             # Used in pg_dump command and filename
-      POSTGRES_HOST: postgres                # <--- CORRECTED: Use the service name
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: postgres
     volumes:
       - ${AIRFLOW_SERVICE_DIR}/backups:/backups
     networks:
