@@ -1,4 +1,4 @@
-name: db-services
+name: general-db-services
 
 x-postgres-common:
   &postgres-common
@@ -10,7 +10,6 @@ x-postgres-common:
     POSTGRES_DB: ${POSTGRES_DB}
     POSTGRES_HOST: postgres 
     PGPASSWORD: ${POSTGRES_PASSWORD}
-
     RESTORE_FILE: ${RESTORE_FILE}
   env_file:
     - .env
@@ -29,6 +28,7 @@ services:
       - > 
         pg_dump -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB -Fc 
         -f $$POSTGRES_CONT_DIR/backups/$$(date +%Y%m%d)-$$POSTGRES_DB.dump
+
   postgres-restore:
     <<: *postgres-common
     restart: "no" # Run once and exit
@@ -44,9 +44,8 @@ services:
   
   postgres-cli:
     <<: *postgres-common
-    # profiles:
-    #   - debug
-    # user: root
+    profiles:
+      - debug
     restart: no
     tty: true
     depends_on:
