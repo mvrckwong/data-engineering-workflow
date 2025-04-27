@@ -29,3 +29,8 @@ create_db_backup:
 	docker compose -f compose.db-service.yml --profile debug down
 	docker compose -f compose.db-service.yml up -d --build --remove-orphans --force-recreate
 	@echo "DB Backup deployed"
+
+create_db_backup_debug:
+	docker compose -f compose.db-service.yml --profile debug down
+	docker compose -f compose.db-service.yml --profile debug up -d --build --remove-orphans --force-recreate
+	@echo "DB Backup deployed in debug mode"

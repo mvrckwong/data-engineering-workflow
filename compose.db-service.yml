@@ -1,4 +1,4 @@
-name: db-services
+name: general-db-services
 
 x-postgres-common:
   &postgres-common
@@ -10,7 +10,6 @@ x-postgres-common:
     POSTGRES_DB: ${POSTGRES_DB}
     POSTGRES_HOST: postgres 
     PGPASSWORD: ${POSTGRES_PASSWORD}
-
     RESTORE_FILE: ${RESTORE_FILE}
   env_file:
     - .env
@@ -44,9 +43,8 @@ services:
   
   postgres-cli:
     <<: *postgres-common
-    # profiles:
-    #   - debug
-    # user: root
+    profiles:
+      - debug
     restart: no
     tty: true
     depends_on:
