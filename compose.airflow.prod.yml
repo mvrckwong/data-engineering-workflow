@@ -16,7 +16,7 @@ x-airflow-common:
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://api-server:8080/execution/'
 
     AIRFLOW__API_AUTH__JWT_SECRET: 'mWE5UR7XNSqqJq1vuTnb_4T1mNBEyRxITT3MBiqmTkI'
     # yamllint disable rule:line-length
@@ -70,7 +70,7 @@ services:
             start_period: 30s
         restart: always
 
-    airflow-apiserver:
+    api-server:
         <<: *airflow-common
         command: api-server
         ports:
@@ -84,10 +84,10 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
-    airflow-scheduler:
+    scheduler:
         <<: *airflow-common
         command: scheduler
         healthcheck:
@@ -99,10 +99,10 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
-    airflow-dag-processor:
+    dag-processor:
         <<: *airflow-common
         command: dag-processor
         healthcheck:
@@ -114,14 +114,13 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
-    airflow-worker:
+    worker:
         <<: *airflow-common
         command: celery worker
         healthcheck:
-            # yamllint disable rule:line-length
             test:
                 - "CMD-SHELL"
                 - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
@@ -137,12 +136,12 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-apiserver:
+            api-server:
                 condition: service_healthy
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
-    airflow-triggerer:
+    triggerer:
         <<: *airflow-common
         command: triggerer
         healthcheck:
@@ -154,13 +153,12 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
-    airflow-init:
+    init:
         <<: *airflow-common
         entrypoint: /bin/bash
-        # yamllint disable rule:line-length
         command:
         - -c
         - |
@@ -209,7 +207,6 @@ services:
             mkdir -p /opts/airflow/{logs,dags,plugins,config}
             chown -R "${AIRFLOW_UID}:0" /opts/airflow/{logs,dags,plugins,config}
             exec /entrypoint airflow version
-        # yamllint enable rule:line-length
         environment:
             <<: *airflow-common-env
             _AIRFLOW_DB_MIGRATE: 'true'
@@ -226,10 +223,7 @@ services:
         environment:
             <<: *airflow-common-env
             CONNECTION_CHECK_MAX_COUNT: "0"
-        command:
-            - bash
-            - -c
-            - airflow
+        tty: true
         depends_on:
             <<: *airflow-common-depends-on
 
@@ -249,7 +243,7 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
 volumes:
