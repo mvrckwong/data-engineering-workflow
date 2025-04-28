@@ -107,13 +107,13 @@ services:
         <<: *airflow-common
         command: ["api-server"]
         ports:
-          - "8080:8080"
+          - "${PORT_AIRFLOW}:8080"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
             interval: 30s
             timeout: 10s
             retries: 10
-            start_period: 30s
+            start_period: 5s
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
@@ -242,12 +242,12 @@ services:
             exec /entrypoint airflow version
         environment:
             <<: *airflow-common-env
-            _AIRFLOW_DB_MIGRATE: 'true'
-            _AIRFLOW_WWW_USER_CREATE: 'true'
-            _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-            _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
-            _PIP_ADDITIONAL_REQUIREMENTS: ''
+            _AIRFLOW_DB_MIGRATE: ${_AIRFLOW_DB_MIGRATE}
+            _AIRFLOW_WWW_USER_CREATE: ${_AIRFLOW_WWW_USER_CREATE}
+            _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
+            _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
         user: "0:0"
+        restart: "no"
 
     cli:
         <<: *airflow-common
@@ -263,11 +263,11 @@ services:
 
     flower:
         <<: *airflow-common
-        command: ["celery", "flower"]
+        command: ["celery", "flower", "--basic-auth=${FLOWER_USER}:${FLOWER_PASSWORD}"]
         profiles:
             - debug
         ports:
-            - "5555:5555"
+            - "${PORT_FLOWER}:5555"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
             interval: 30s
