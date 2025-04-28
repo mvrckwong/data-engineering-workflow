@@ -10,19 +10,30 @@ x-airflow-common:
         &airflow-common-env
         AIRFLOW_CONFIG: '${AIRFLOW_CONT_DIR}/config/airflow.cfg'
 
-        AIRFLOW__API_AUTH__JWT_SECRET: 'mWE5UR7XNSqqJq1vuTnb_4T1mNBEyRxITT3MBiqmTkI'
+        AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_KEY}
 
+        # Core Settings
         AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-        AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
-        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-        AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
-        AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-        AIRFLOW__CORE__FERNET_KEY: ''
+        AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
         AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
         AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
         AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://api-server:8080/execution/'
+        AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+        
+        # Database Settings (Using variables from .env)
+        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}
 
+        # Celery Settings (Using variables from .env)
+        AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}
+        AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+        
+        # Scheduler Settings
         AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+
+        # Webserver Settings (Using variables from .env)
+        AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_KEY}
+        AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
+        AIRFLOW__WEBSERVER__RATELIMIT_STORAGE_URI: "redis://:${REDIS_PASSWORD}@redis:6379/1"
 
         # Optional: Statsd settings for monitoring
         # AIRFLOW__METRICS__STATSD_ON: 'true'
@@ -78,10 +89,12 @@ services:
 
     redis:
         image: redis:7.2-bookworm
+        command: 
+            ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
         expose:
             - 6379
         healthcheck:
-            test: ["CMD", "redis-cli", "ping"]
+            test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
             interval: 10s
             timeout: 10s
             retries: 10
@@ -94,7 +107,7 @@ services:
         <<: *airflow-common
         command: ["api-server"]
         ports:
-        - "8080:8080"
+          - "8080:8080"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
             interval: 30s
