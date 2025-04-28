@@ -22,9 +22,18 @@ x-airflow-common:
         AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
         AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://api-server:8080/execution/'
 
-        
-
         AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+
+        # Optional: Statsd settings for monitoring
+        # AIRFLOW__METRICS__STATSD_ON: 'true'
+        # AIRFLOW__METRICS__STATSD_HOST: 'statsd-exporter'
+        # AIRFLOW__METRICS__STATSD_PORT: '8125'
+        # AIRFLOW__METRICS__STATSD_PREFIX: 'airflow'
+
+        # Optional: Add other production configurations like logging, remote task handlers, etc.
+        # AIRFLOW__LOGGING__REMOTE_LOGGING: 'true'
+        # AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: 's3://my-airflow-logs-bucket/logs'
+        # AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: 'aws_default'
         
     volumes:
         - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_CONT_DIR}/dags:rw
@@ -33,19 +42,23 @@ x-airflow-common:
         - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_CONT_DIR}/logs:rw
     user: 
         "${AIRFLOW_UID:-50000}:0"
+    env_file:
+        - .env
     depends_on:
         &airflow-common-depends-on
         redis:
             condition: service_healthy
         postgres:
             condition: service_healthy
-    env_file:
-        - .env
+    networks:
+        - airflow-network
 
 services:
     postgres:
         image: postgres:13
         user: "${POSTGRES_TARGET_UID:-999}:${POSTGRES_TARGET_GID:-999}"
+        ports:
+            - "${PORT_POSTGRES}:5432"
         environment:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -59,6 +72,9 @@ services:
             retries: 10
             start_period: 5s
         restart: always
+        networks:
+            - shared-db-network
+            - airflow-network
 
     redis:
         image: redis:7.2-bookworm
@@ -67,10 +83,12 @@ services:
         healthcheck:
             test: ["CMD", "redis-cli", "ping"]
             interval: 10s
-            timeout: 30s
+            timeout: 10s
             retries: 10
             start_period: 5s
         restart: always
+        networks:
+            - airflow-network
 
     api-server:
         <<: *airflow-common
@@ -259,9 +277,9 @@ networks:
         driver: bridge
         name: shared-db-network
     # For Monitoring and Logging
-    monitoring-network:
+    shared-monitoring-network:
         driver: bridge
-        name: monitoring-network
+        name: shared-monitoring-network
 
 # Define named volumes
 volumes:

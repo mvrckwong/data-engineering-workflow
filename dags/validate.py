@@ -29,5 +29,11 @@ with DAG(
 		sql="SELECT 1",
 	)
 
+	task_3 = SQLExecuteQueryOperator(
+		task_id="validate_neon_test",
+		conn_id="neon-postgresdb-test",
+		sql="SELECT 1",
+	)
+
 	# Set task dependencies
-	task_1 >> task_2
+	task_1 >> task_2 >> task_3
