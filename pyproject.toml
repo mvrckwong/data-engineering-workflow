@@ -8,8 +8,7 @@ requires-python = ">=3.11"
 # Core Docker Dependencies
 # These dependencies are required for the core functionality of the package.
 dependencies = [
-    "pandas>=2.2.3",
-    "python-dotenv>=1.1.0",
+    "apache-airflow-providers-postgres>=6.1.3",
 ]
 
 # Optional Dependencies
