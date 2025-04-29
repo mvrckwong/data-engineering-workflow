@@ -2,16 +2,16 @@
 ARG AIRFLOW_VERSION=3.0.0
 FROM apache/airflow:${AIRFLOW_VERSION}
 
-# Labeling
-LABEL maintainer="mvrck.wong@gmail.com"
-LABEL description="Custom Airflow image"
+# Switch to root user to install system dependencies
+USER root
 
 # Add any required packages here.
-USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # Add system packages needed by your Python dependencies here. Examples:
-    # build-essential \
+    build-essential \
+    coreutils \
+    curl \
     # libpq-dev \
     # freetds-dev \
     # libkrb5-dev \
@@ -29,5 +29,4 @@ COPY --chown=airflow:airflow requirements.txt /opt/requirements.txt
 USER airflow
 
 # Install python dependencies
-RUN pip install --no-cache-dir \
-    -r /opt/requirements.txt
+RUN pip install --no-cache-dir -r /opt/requirements.txt
