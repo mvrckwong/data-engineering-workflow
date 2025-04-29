@@ -1,0 +1,103 @@
+# === Build Stage ===
+# Define build arguments
+ARG PYTHON_VERSION=3.9 # Or the Python version matching the one IN apache/airflow:slim-3.0.0. Check Airflow docs/Dockerhub if unsure.
+ARG BUILDER_IMAGE_NAME="python:${PYTHON_VERSION}-slim-bookworm" # Use a specific Python base for building wheels
+# Define the target slim Airflow image
+ARG AIRFLOW_SLIM_IMAGE="apache/airflow:slim-3.0.0"
+
+FROM ${BUILDER_IMAGE_NAME} as builder
+
+# Labeling for the builder stage (optional)
+LABEL stage="builder"
+
+# Set environment variables to prevent prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Install build-essential and any system libraries needed *only* to build your Python packages
+# Example: If a package needs compilation or links against libpq-dev during install
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # --- Build-time System Dependencies ---
+        build-essential \
+        # Example: libpq-dev # Needed to build psycopg2 from source
+        # Example: freetds-dev # Needed for pyodbc with FreeTDS
+        # Add other -dev packages required by your requirements.txt here
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create a directory for wheels
+WORKDIR /opt/wheels
+
+# Copy only the requirements file first to leverage Docker cache
+COPY requirements.txt .
+
+# Build wheels for all dependencies. This compiles packages if needed.
+# Using --prefer-binary where possible speeds things up if pre-built wheels exist.
+RUN pip wheel --wheel-dir . --no-cache-dir --prefer-binary -r requirements.txt
+
+
+# === Final Stage ===
+# Use the specified slim Airflow base image
+FROM ${AIRFLOW_SLIM_IMAGE} as final
+
+# Labeling for the final image
+LABEL maintainer="mvrck.wong@gmail.com"
+LABEL description="Custom Airflow image based on slim-3.0.0 - Multi-Stage Build"
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Switch to root user to install runtime system packages
+USER root
+
+# Install only runtime system dependencies
+# NOTE: Slim images have fewer pre-installed libraries. You may need to add more
+# system packages here compared to using the non-slim image (e.g., database clients).
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # --- Runtime System Dependencies ---
+        # Check if common clients are needed and install explicitly if required by your packages/connections:
+        # Example: libpq5        # Runtime dependency for psycopg2
+        # Example: freetds-bin   # Runtime for pyodbc with FreeTDS
+        # Example: default-libmysqlclient-dev (or default-mysql-client) # For MySQL connections
+        # Example: curl, git     # Other common tools you might need at runtime
+        # Add other runtime libraries required by your requirements.txt or DAGs here
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the built wheels from the builder stage
+COPY --from=builder /opt/wheels /opt/wheels
+
+# Copy the requirements file (optional, useful for reference)
+COPY --chown=airflow:airflow requirements.txt /opt/requirements.txt
+
+# Switch back to the airflow user BEFORE installing Python packages
+USER airflow
+
+# Install Python dependencies from the wheels built in the previous stage
+# --no-index prevents pip from checking PyPI
+# --find-links points pip to the local wheels directory
+# Use the requirements file to ensure correct versions are installed
+# NOTE: Ensure providers required by your DAGs (e.g., postgres, mysql, http providers)
+# are explicitly listed in requirements.txt, as slim images include fewer by default.
+RUN pip install --no-cache-dir --no-index --find-links=/opt/wheels -r /opt/requirements.txt
+
+# Optional: Clean up the wheels directory after installation
+# USER root
+# RUN rm -rf /opt/wheels
+# USER airflow
+
+# Final switch back to airflow user (ensures non-root execution)
+USER airflow
+
+# Add other runtime configurations below if needed
+# Example: Copy DAGs, plugins, set environment variables
+# COPY dags/ /opt/airflow/dags/
+# COPY plugins/ /opt/airflow/plugins/
+# ENV AIRFLOW__CORE__LOAD_EXAMPLES=False
+
+# The base image's ENTRYPOINT and CMD should take over from here
