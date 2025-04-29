@@ -1,7 +1,8 @@
 # Custom
-logs/
+*lock
+*log
 *ipynb
-uv.lock
+*dump
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
