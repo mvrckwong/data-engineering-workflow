@@ -8,7 +8,7 @@ x-airflow-common:
         dockerfile: Dockerfile.airflow
     environment:
         &airflow-common-env
-        AIRFLOW_CONFIG: '${AIRFLOW_CONT_DIR}/config/airflow.cfg'
+        AIRFLOW_CONFIG: '${AIRFLOW_HOME}/config/airflow.cfg'
 
         AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_KEY}
 
@@ -47,10 +47,10 @@ x-airflow-common:
         # AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: 'aws_default'
         
     volumes:
-        - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_CONT_DIR}/dags:rw
-        - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_CONT_DIR}/config:rw
-        - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_CONT_DIR}/plugins:rw
-        - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_CONT_DIR}/logs:rw
+        - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_HOME}/dags:rw
+        - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_HOME}/config:rw
+        - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_HOME}/plugins:rw
+        - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_HOME}/logs:rw
     user: 
         "${AIRFLOW_UID:-50000}:0"
     env_file:
@@ -237,8 +237,8 @@ services:
             echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
             echo
             fi
-            mkdir -p ${AIRFLOW_CONT_DIR}/{logs,dags,plugins,config}
-            chown -R "${AIRFLOW_UID}:0" ${AIRFLOW_CONT_DIR}/{logs,dags,plugins,config}
+            mkdir -p ${AIRFLOW_HOME}/{logs,dags,plugins,config}
+            chown -R "${AIRFLOW_UID}:0" ${AIRFLOW_HOME}/{logs,dags,plugins,config}
             exec /entrypoint airflow version
         environment:
             <<: *airflow-common-env
