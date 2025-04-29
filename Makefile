@@ -1,10 +1,15 @@
 install_init_reqs:
 	pip install uv
 
+# reload_reqs:
+# 	uv sync
+# 	uv pip freeze > .devcontainer/requirements.txt
+# 	@echo "Updated requirements.txt from pyproject.toml"
+
 reload_reqs:
-	uv sync
-	uv pip freeze > .devcontainer/requirements.txt
-	@echo "Updated requirements.txt from pyproject.toml" 
+	uv pip compile pyproject.toml \
+		-c https://raw.githubusercontent.com/apache/airflow/constraints-3.0.0/constraints-3.12.txt \
+		-o ./.devcontainer/requirements.txt
 
 deploy_airflow:
 	docker compose -f compose.airflow.prod.yml --profile debug down

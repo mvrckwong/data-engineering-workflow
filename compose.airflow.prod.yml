@@ -2,26 +2,29 @@ name: general-airflow-prod
 
 x-airflow-common:
     &airflow-common
-    # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.0.0}
+    #image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.0.0}
     build:
         context: ./.devcontainer
         dockerfile: Dockerfile.airflow
     environment:
         &airflow-common-env
+        AIRFLOW_CONFIG: '${AIRFLOW_HOME}/config/airflow.cfg'
+
+        AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_KEY}
 
         # Core Settings
         AIRFLOW__CORE__EXECUTOR: CeleryExecutor
         AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
         AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
         AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-        AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:${PORT_AIRFLOW}/execution/'
+        AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://api-server:8080/execution/'
         AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
         
         # Database Settings (Using variables from .env)
-        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}
 
         # Celery Settings (Using variables from .env)
-        AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+        AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}
         AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
         
         # Scheduler Settings
@@ -33,56 +36,56 @@ x-airflow-common:
         AIRFLOW__WEBSERVER__RATELIMIT_STORAGE_URI: "redis://:${REDIS_PASSWORD}@redis:6379/1"
 
         # Optional: Statsd settings for monitoring
-        AIRFLOW__METRICS__STATSD_ON: 'true'
-        AIRFLOW__METRICS__STATSD_HOST: 'statsd-exporter'
-        AIRFLOW__METRICS__STATSD_PORT: '8125'
-        AIRFLOW__METRICS__STATSD_PREFIX: 'airflow'
+        # AIRFLOW__METRICS__STATSD_ON: 'true'
+        # AIRFLOW__METRICS__STATSD_HOST: 'statsd-exporter'
+        # AIRFLOW__METRICS__STATSD_PORT: '8125'
+        # AIRFLOW__METRICS__STATSD_PREFIX: 'airflow'
 
         # Optional: Add other production configurations like logging, remote task handlers, etc.
         # AIRFLOW__LOGGING__REMOTE_LOGGING: 'true'
         # AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: 's3://my-airflow-logs-bucket/logs'
         # AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: 'aws_default'
-
+        
     volumes:
-        - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_CONT_DIR}/dags:rw
-        - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_CONT_DIR}/config:rw
-        - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_CONT_DIR}/plugins:rw
-        - ${AIRFLOW_SERVICE_DIR}/logs:${AIRFLOW_CONT_DIR}/logs:rw
+        - ${AIRFLOW_PROJ_DIR}/dags:${AIRFLOW_HOME}/dags:rw
+        - ${AIRFLOW_PROJ_DIR}/config:${AIRFLOW_HOME}/config:rw
+        - ${AIRFLOW_PROJ_DIR}/plugins:${AIRFLOW_HOME}/plugins:rw
+        - ${AIRFLOW_PROJ_DIR}/logs:${AIRFLOW_HOME}/logs:rw
     user: 
-        "${AIRFLOW_UID}:0"
+        "${AIRFLOW_UID:-50000}:0"
+    env_file:
+        - .env
     depends_on:
         &airflow-common-depends-on
         redis:
             condition: service_healthy
         postgres:
             condition: service_healthy
-    env_file:
-        - .env
     networks:
         - airflow-network
-        - shared-airflow-network
 
 services:
     postgres:
         image: postgres:13
         user: "${POSTGRES_TARGET_UID:-999}:${POSTGRES_TARGET_GID:-999}"
         ports:
-            - "${LOCAL_HOST}:${PORT_POSTGRES}:5432"
+            - "${PORT_POSTGRES}:5432"
         environment:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
             POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_HOST: ${POSTGRES_HOST}
         volumes:
-          - postgres-db-volume:/var/lib/postgresql/data
+            - postgres-db-volume:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
             interval: 10s
             retries: 10
             start_period: 5s
-        restart: unless-stopped
+        restart: always
         networks:
-            - airflow-network
             - shared-db-network
+            - airflow-network
 
     redis:
         image: redis:7.2-bookworm
@@ -93,10 +96,10 @@ services:
         healthcheck:
             test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
             interval: 10s
-            timeout: 30s
+            timeout: 10s
             retries: 10
-            start_period: 30s
-        restart: unless-stopped
+            start_period: 5s
+        restart: always
         networks:
             - airflow-network
 
@@ -104,17 +107,17 @@ services:
         <<: *airflow-common
         command: ["api-server"]
         ports:
-            - "${LOCAL_HOST}:${PORT_AIRFLOW}:8080"
+          - "${PORT_AIRFLOW}:8080"
         healthcheck:
             test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
             interval: 30s
             timeout: 10s
             retries: 10
-            start_period: 30s
+            start_period: 5s
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
     scheduler:
@@ -129,7 +132,7 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
     dag-processor:
@@ -144,7 +147,7 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
     worker:
@@ -160,13 +163,15 @@ services:
             start_period: 30s
         environment:
             <<: *airflow-common-env
+            # Required to handle warm shutdown of the celery workers properly
+            # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
             DUMB_INIT_SETSID: "0"
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
             api-server:
                 condition: service_healthy
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
     triggerer:
@@ -181,10 +186,10 @@ services:
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
-    airflow-init:
+    init:
         <<: *airflow-common
         entrypoint: /bin/bash
         command:
@@ -232,8 +237,8 @@ services:
             echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
             echo
             fi
-            mkdir -p /sources/logs /sources/dags /sources/plugins
-            chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+            mkdir -p ${AIRFLOW_HOME}/{logs,dags,plugins,config}
+            chown -R "${AIRFLOW_UID}:0" ${AIRFLOW_HOME}/{logs,dags,plugins,config}
             exec /entrypoint airflow version
         environment:
             <<: *airflow-common-env
@@ -243,18 +248,6 @@ services:
             _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
         user: "0:0"
         restart: "no"
-        volumes:
-            - ${AIRFLOW_PROJ_DIR}:/sources
-    
-    statsd-exporter:
-        image: prom/statsd-exporter:v0.26.1
-        command:
-            - '--statsd.listen-udp=:8125'
-            - '--web.listen-address=:9102'
-        restart: always
-        networks:
-            - airflow-network
-            - monitoring-network
 
     cli:
         <<: *airflow-common
@@ -263,29 +256,28 @@ services:
         environment:
             <<: *airflow-common-env
             CONNECTION_CHECK_MAX_COUNT: "0"
-        command: 
-            ["bash", "-c", "airflow"]
+        tty: true
+        stdin_open: true
         depends_on:
             <<: *airflow-common-depends-on
 
     flower:
         <<: *airflow-common
-        command: 
-            ["celery", "flower", "--basic-auth=${FLOWER_USER}:${FLOWER_PASSWORD}"]
+        command: ["celery", "flower", "--basic-auth=${FLOWER_USER}:${FLOWER_PASSWORD}"]
         profiles:
             - debug
         ports:
-            - "${LOCAL_HOST}:${PORT_FLOWER}:5555"
+            - "${PORT_FLOWER}:5555"
         healthcheck:
-            test: ["CMD", "curl", "--fail", "http://localhost:${PORT_FLOWER}/"]
+            test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
             interval: 30s
             timeout: 10s
-            retries: 10
+            retries: 5
             start_period: 30s
         restart: always
         depends_on:
             <<: *airflow-common-depends-on
-            airflow-init:
+            init:
                 condition: service_completed_successfully
 
 # Define internal and external networks
@@ -293,15 +285,14 @@ networks:
     airflow-network:
         driver: bridge
         name: airflow-internal-network
-    shared-airflow-network:
-        driver: bridge
-        name: shared-airflow-network
+    # For Backups and Restores
     shared-db-network:
         driver: bridge
         name: shared-db-network
-    monitoring-network:
+    # For Monitoring and Logging
+    shared-monitoring-network:
         driver: bridge
-        name: monitoring-network
+        name: shared-monitoring-network
 
 # Define named volumes
 volumes:

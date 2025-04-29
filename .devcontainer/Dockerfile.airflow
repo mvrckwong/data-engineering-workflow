@@ -29,6 +29,5 @@ COPY --chown=airflow:airflow requirements.txt /opt/requirements.txt
 USER airflow
 
 # Install python dependencies
-RUN pip install --no-cache-dir redis \
-    apache-airflow[redis]==${AIRFLOW_VERSION} \
+RUN pip install --no-cache-dir \
     -r /opt/requirements.txt
