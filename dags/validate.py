@@ -2,7 +2,7 @@ from airflow.models.dag import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from datetime import datetime, timezone
 
-from settings.callbacks import notify_gchat_on_failure, NotifyGChat
+from settings.callbacks import AirflowChatNotifier
 
 default_args = {
 	'start_date': datetime(2025, 4, 1, tzinfo=timezone.utc),
@@ -15,8 +15,8 @@ with DAG(
     dag_id='validate_db_connections',
     dag_display_name='Validate DB Connections',
     description='Validate DB Connections',
-    on_failure_callback=NotifyGChat().on_failure,
-    on_success_callback=NotifyGChat().on_failure,
+    on_failure_callback=AirflowChatNotifier().on_failure,
+    on_success_callback=AirflowChatNotifier().on_failure,
     **default_args
 ) as dag:
 

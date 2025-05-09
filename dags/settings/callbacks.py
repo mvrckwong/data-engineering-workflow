@@ -2,18 +2,21 @@ import requests
 from airflow.models import Variable
 
 
-
-class NotifyGChat:
+class AirflowChatNotifier:
 	def __init__(self):
-		"""Initialize the NotifyGChat class."""
+		"""Initialize the AirflowChatNotifier class."""
 		self.webhook_url = Variable.get("WEBHOOK_GCHAT_URL")
 		if not self.webhook_url:
 			raise ValueError("Webhook URL is not set in Airflow Variables.")
-	
+		
+	# Data pipeline or task has failed.
+	# Data pipeline or task has succeeded.
+	# Data pipeline or task on retry.
+
 	def on_failure(self, context):
 		"""Send a notification to Google Chat on task failure."""
 		payload = {
-			"text": "Hello from Airflow! We have a failure on class."
+			"text": "Hello from Airflow! \nWe have a failure on class."
 		}
 	
 		try:
@@ -27,32 +30,3 @@ class NotifyGChat:
 		except Exception as e:
 			print(f"Exception occurred: {str(e)}")
 			return None
-
-
-
-
-def notify_gchat_on_failure(context):
-	"""Send a notification to Google Chat on task failure."""
-
-	# Get the webhook URL from Airflow Variables
-	webhook_url = Variable.get("WEBHOOK_GCHAT_URL")
-	if not webhook_url:
-		return None
-
-	# Simplest possible payload
-	payload = {
-		"text": "Hello from Airflow! We have a failure."
-	}
-
-	# Send request
-	try:
-		response = requests.post(
-			webhook_url,
-			json=payload
-		)
-		print(f"Status code: {response.status_code}")
-		print(f"Response text: {response.text}")
-		return response.status_code
-	except Exception as e:
-		print(f"Exception occurred: {str(e)}")
-		return None
