@@ -7,7 +7,7 @@ from settings.callbacks import GoogleChatNotifier
 # Define static variables and functions
 default_args = {
 	'start_date': datetime(2025, 4, 1, tzinfo=timezone.utc),
-	'schedule': None,
+	'schedule': '0 6 * * *',
 	'catchup': False,
 	'tags': ['sql', 'example', 'native-datetime']
 }
