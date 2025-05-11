@@ -20,8 +20,8 @@ class GoogleChatNotifier:
 		payload = {
 			"text": "\n".join([
 				f"Task has succeeded.\n",
-				f"Run ID: {context['run_id']}",
-				f"DAG: {context['dag']}"
+				f"Run Id: {context['run_id']}",
+				f"Dag and Task Id: {context['task_instance_key_str']}"
 			])
 		}
 
@@ -30,9 +30,9 @@ class GoogleChatNotifier:
 	def on_failure_task(self, context):
 		payload = {
 			"text": "\n".join([
-				f"Task has failed.\n",
-				f"Run ID: {context['run_id']}",
-				f"DAG Run Params: {context['dag_run']}"
+				f"Task has succeeded.\n",
+				f"Run Id: {context['run_id']}",
+				f"Dag and Task Id: {context['task_instance_key_str']}"
 			])
 		}
 

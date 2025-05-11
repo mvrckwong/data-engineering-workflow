@@ -27,18 +27,23 @@ with DAG(
 		task_id="validate_neon_prod",
 		conn_id="neon-postgresdb-prod",
 		on_success_callback=[gchat_notifier.on_success_task],
+		on_failure_callback=[gchat_notifier.on_failure_task],
 		sql="SELECT 1",
 	)
 
 	task_2 = SQLExecuteQueryOperator(
 		task_id="validate_neon_dev",
 		conn_id="neon-postgresdb-dev",
+		on_success_callback=[gchat_notifier.on_success_task],
+		on_failure_callback=[gchat_notifier.on_failure_task],
 		sql="SELECT 1",
 	)
 
 	task_3 = SQLExecuteQueryOperator(
 		task_id="validate_neon_test",
 		conn_id="neon-postgresdb-test",
+		on_success_callback=[gchat_notifier.on_success_task],
+		on_failure_callback=[gchat_notifier.on_failure_task],
 		sql="SELECT 1",
 	)
 
