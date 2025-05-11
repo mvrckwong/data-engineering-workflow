@@ -16,12 +16,34 @@ class GoogleChatNotifier:
 	- on_retry: Send a notification to Google Chat on task retry.
 	"""
 
-	def on_success(self, context):
-		"""Send a notification to Google Chat on task failure."""
+	def on_success_task(self, context):
 		payload = {
 			"text": "\n".join([
-				"Data pipeline or task has succeeded.",
-				"No context available."
+				f"Task has succeeded.\n",
+				f"Run ID: {context['run_id']}",
+				f"DAG: {context['dag']}"
+			])
+		}
+
+		return requests.post(self._webhook_gchat_url, json=payload)
+	
+	def on_failure_task(self, context):
+		payload = {
+			"text": "\n".join([
+				f"Task has failed.\n",
+				f"Run ID: {context['run_id']}",
+				f"DAG Run Params: {context['dag_run']}"
+			])
+		}
+
+		return requests.post(self._webhook_gchat_url, json=payload)
+
+	def on_success(self, context):
+		"""Send a notification to Google Chat on task failure."""
+
+		payload = {
+			"text": "\n".join([
+				f"Pipeline has succeeded."
 			])
 		}
 
@@ -31,8 +53,7 @@ class GoogleChatNotifier:
 		"""Send a notification to Google Chat on task failure."""
 		payload = {
 			"text": "\n".join([
-				"Data pipeline or task has failed.",
-				"No context available."
+				f"Pipeline has failed."
 			])
 		}
 

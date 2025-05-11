@@ -26,6 +26,7 @@ with DAG(
 	task_1 = SQLExecuteQueryOperator(
 		task_id="validate_neon_prod",
 		conn_id="neon-postgresdb-prod",
+		on_success_callback=[gchat_notifier.on_success_task],
 		sql="SELECT 1",
 	)
 
