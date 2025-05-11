@@ -5,8 +5,8 @@ from airflow.models import Variable
 class GoogleChatNotifier:
 	def __init__(self):
 		"""Initialize the AirflowChatNotifier class."""
-		self.webhook_url = Variable.get("WEBHOOK_GCHAT_URL")
-		if not self.webhook_url:
+		self._webhook_gchat_url = Variable.get("WEBHOOK_GCHAT_URL")
+		if not self._webhook_gchat_url:
 			raise ValueError("Webhook URL is not set in Airflow Variables.")
 		
 	"""
@@ -25,7 +25,7 @@ class GoogleChatNotifier:
 			])
 		}
 
-		return requests.post(self.webhook_url, json=payload)
+		return requests.post(self._webhook_gchat_url, json=payload)
 
 	def on_failure(self, context):
 		"""Send a notification to Google Chat on task failure."""
@@ -36,7 +36,7 @@ class GoogleChatNotifier:
 			])
 		}
 
-		return requests.post(self.webhook_url, json=payload)
+		return requests.post(self._webhook_gchat_url, json=payload)
 	
 
 if __name__ == "__main__":
