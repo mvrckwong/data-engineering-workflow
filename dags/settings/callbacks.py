@@ -9,6 +9,7 @@ class AirflowChatNotifier:
 		if not self.webhook_url:
 			raise ValueError("Webhook URL is not set in Airflow Variables.")
 		
+	# TODO: Add more methods to handle different types of notifications.
 	# Data pipeline or task has failed.
 	# Data pipeline or task has succeeded.
 	# Data pipeline or task on retry.
@@ -16,7 +17,9 @@ class AirflowChatNotifier:
 	def on_failure(self, context):
 		"""Send a notification to Google Chat on task failure."""
 		payload = {
-			"text": "Hello from Airflow! \nWe have a failure on class."
+			"text": "\n".join([
+				"Data pipeline or task has failed."
+			])
 		}
 	
 		try:
