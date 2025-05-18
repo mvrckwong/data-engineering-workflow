@@ -2,7 +2,6 @@ pipeline {
     agent any
     
     triggers {
-        // Poll the SCM every 5 minutes for changes
         pollSCM('H/5 * * * *')
     }
     
@@ -10,8 +9,8 @@ pipeline {
         stage('Update Repository') {
             steps {
                 script {
-                    def workspaceDir = pwd()
-                    echo "Current workspace: ${workspaceDir}"
+                    echo "Working in current directory: ${pwd()}"
+                    echo "Operating system: ${isUnix() ? 'Linux/Unix' : 'Windows'}"
                     
                     if (isUnix()) {
                         sh """
