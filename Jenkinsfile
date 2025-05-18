@@ -2,7 +2,8 @@ pipeline {
     agent any
     
     triggers {
-        cron('0 * * * *')
+        // Replace cron with GitHub webhook trigger
+        githubPush()
     }
     
     stages {
